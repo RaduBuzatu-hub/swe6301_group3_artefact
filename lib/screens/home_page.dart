@@ -6,7 +6,8 @@ import '../widgets/section_title.dart';
 import 'search_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final ValueChanged<String>? onSearchSubmit;
+  const HomePage({super.key, this.onSearchSubmit});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -101,12 +102,15 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const SizedBox(height: 12),
                           HomeSearchBar(
-                            onTap: () {
-                              Navigator.of(context).push(
+                            onTap: () async {
+                              final result = await Navigator.of(context).push<String>(
                                 MaterialPageRoute(
                                   builder: (_) => const SearchPage(),
                                 ),
                               );
+                              if (result != null && result.trim().isNotEmpty) {
+                                widget.onSearchSubmit?.call(result.trim());
+                              }
                             },
                           ),
                           const SizedBox(height: 24),

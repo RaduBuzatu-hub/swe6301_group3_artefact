@@ -1,38 +1,246 @@
 import 'package:flutter/material.dart';
 
 class ExplorePage extends StatelessWidget {
-  const ExplorePage({super.key});
+  final String query;
+  ExplorePage({super.key, String? query})
+      : query = (query ?? '').isEmpty ? 'Explore' : query!;
+
+  final List<_ResultItem> _results = const [
+    _ResultItem(
+      title: 'Thames Eco Stay',
+      location: 'London · Zone 2',
+      meta: 'Local owned | Solar powered',
+      price: 'from GBP120 / 2 nights',
+      imageUrl:
+          'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&w=1200&q=80',
+    ),
+    _ResultItem(
+      title: 'Camden Green Hostel',
+      location: 'London',
+      meta: 'Vegan friendly | Free bikes',
+      price: 'from GBP68 / night',
+      imageUrl:
+          'https://images.unsplash.com/photo-1433838552652-f9a46b332c40?auto=format&w=1200&q=80',
+    ),
+    _ResultItem(
+      title: 'Cornwall Clifftop Cabin',
+      location: 'Cornwall',
+      meta: 'Sea view | Wood-fired hot tub',
+      price: 'from GBP210 / 2 nights',
+      imageUrl:
+          'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&w=1200&q=80',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              query,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const Text(
+              '12 eco-friendly results in UK',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFB388FF),
+                Color(0xFF7E57C2),
+                Color(0xFF5E35B1),
+                Color(0xFF311B92),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFB388FF),
+              Color(0xFF7E57C2),
+              Color(0xFF5E35B1),
+              Color(0xFF311B92),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: const [
+                    _FilterChip(label: 'Train only'),
+                    _FilterChip(label: '< GBP200'),
+                    _FilterChip(label: 'Sort: Recommended'),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _results.length,
+                  itemBuilder: (context, index) {
+                    final item = _results[index];
+                    return _ResultCard(item: item);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  const _FilterChip({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFFB388FF),
-            Color(0xFF7E57C2),
-            Color(0xFF5E35B1),
-            Color(0xFF311B92),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
         ),
       ),
-      child: const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Text(
-              'Explore',
-              style: TextStyle(
-                fontSize: 26,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+    );
+  }
+}
+
+class _ResultItem {
+  final String title;
+  final String location;
+  final String meta;
+  final String price;
+  final String imageUrl;
+  const _ResultItem({
+    required this.title,
+    required this.location,
+    required this.meta,
+    required this.price,
+    required this.imageUrl,
+  });
+}
+
+class _ResultCard extends StatelessWidget {
+  final _ResultItem item;
+  const _ResultCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: AspectRatio(
+              aspectRatio: 3 / 2,
+              child: Image.network(
+                item.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: Colors.grey.shade200,
+                  child: const Icon(Icons.landscape, size: 48, color: Colors.grey),
+                ),
               ),
             ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.location,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.meta,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  item.price,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

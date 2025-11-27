@@ -11,7 +11,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _controller = TextEditingController();
   final List<String> _popularSearches = const [
-    'Low CO₂ getaways',
+    'Low CO2 getaways',
     'No-flight trips',
     'Budget eco stays',
     'Forest hikes',
@@ -63,9 +63,11 @@ class _SearchPageState extends State<SearchPage> {
 
   void _handleSubmit([String? value]) {
     final text = value ?? _controller.text;
-    _saveRecent(text);
+    final normalized = text.trim();
+    if (normalized.isEmpty) return;
+    _saveRecent(normalized);
     _controller.clear();
-    Navigator.of(context).pop(text);
+    Navigator.of(context).pop(normalized);
   }
 
   Widget _buildSectionTitle(String title) {

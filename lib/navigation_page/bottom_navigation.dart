@@ -13,17 +13,25 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   int _index = 0;
+  String? _exploreQuery;
 
-  final List<Widget> pages = const [
-    HomePage(),
-    ExplorePage(),
-    TripsPage(),
-    ProfilePage(),
-  ];
+  void _handleSearchSubmit(String query) {
+    setState(() {
+      _exploreQuery = query;
+      _index = 1; // switch to Explore tab
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
+
+    final pages = [
+      HomePage(onSearchSubmit: _handleSearchSubmit),
+      ExplorePage(query: _exploreQuery),
+      const TripsPage(),
+      const ProfilePage(),
+    ];
 
     return Scaffold(
       body: pages[_index],
