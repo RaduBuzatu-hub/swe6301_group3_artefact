@@ -3,6 +3,7 @@ import '../widgets/categories.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
+import 'search_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -99,7 +100,15 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 12),
-                          const HomeSearchBar(),
+                          HomeSearchBar(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SearchPage(),
+                                ),
+                              );
+                            },
+                          ),
                           const SizedBox(height: 24),
                           const SectionTitle('Categories'),
                           const SizedBox(height: 12),

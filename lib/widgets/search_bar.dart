@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 class HomeSearchBar extends StatelessWidget {
-  const HomeSearchBar({super.key});
+  final VoidCallback? onTap;
+  const HomeSearchBar({super.key, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      readOnly: onTap != null,
+      onTap: onTap,
       style: const TextStyle(
         color: Colors.white,
         fontSize: 16,
