@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../widgets/categories.dart';
+import '../widgets/featured_card.dart';
+import '../widgets/search_bar.dart';
+import '../widgets/section_title.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -33,31 +37,42 @@ class HomePage extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                TextField(
-                  style: const TextStyle(color: Colors.white),
-                  cursorColor: Colors.white70,
-                  decoration: InputDecoration(
-                    hintText: 'Search eco-friendly trips',
-                    hintStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.12),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(28),
-                      borderSide: BorderSide.none,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        const HomeSearchBar(),
+                        const SizedBox(height: 24),
+                        const SectionTitle('Categories'),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: kCategories
+                              .map((cat) => CategoryPill(category: cat))
+                              .toList(),
+                        ),
+                        const SizedBox(height: 24),
+                        const SectionTitle('Featured Eco Escape'),
+                        const SizedBox(height: 12),
+                        const FeaturedCard(
+                          title: 'Mountain Retreat',
+                          subtitle: '3 nights',
+                        ),
+                        // more sections (featured cards, trips) can follow...
+                      ],
                     ),
                   ),
                 ),
-                // Add more content sections below...
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
