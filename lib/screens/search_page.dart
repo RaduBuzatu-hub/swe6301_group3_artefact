@@ -90,7 +90,7 @@ class _SearchPageState extends State<SearchPage> {
       children: items
           .map(
             (item) => ActionChip(
-              backgroundColor: Colors.white.withOpacity(0.12),
+              backgroundColor: const Color(0x99311B92), // semi-transparent purple
               label: Text(
                 item,
                 style: const TextStyle(
@@ -142,7 +142,10 @@ class _SearchPageState extends State<SearchPage> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text(
               'Cancel',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Color(0xFFF7DFA5),
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -171,23 +174,23 @@ class _SearchPageState extends State<SearchPage> {
                   onSubmitted: _handleSubmit,
                   onChanged: (_) => setState(() {}),
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFFF7DFA5),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
-                  cursorColor: Colors.white70,
+                  cursorColor: Color(0xFFF7DFA5),
                   decoration: InputDecoration(
                     hintText: 'Search eco-friendly trips',
                     hintStyle: const TextStyle(
-                      color: Colors.white70,
+                      color: Color(0xFFF7DFA5),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.1,
                     ),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFFF7DFA5)),
                     suffixIcon: _controller.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white70),
+                            icon: const Icon(Icons.clear, color: Color(0xFFF7DFA5)),
                             onPressed: () => setState(() => _controller.clear()),
                           )
                         : null,

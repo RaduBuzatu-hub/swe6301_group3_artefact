@@ -17,10 +17,14 @@ class _FeaturedEscape {
   final String title;
   final String subtitle;
   final String assetPath;
+  final String location;
+  final String price;
   const _FeaturedEscape({
     required this.title,
     required this.subtitle,
     required this.assetPath,
+    required this.location,
+    required this.price,
   });
 }
 
@@ -32,16 +36,22 @@ class _HomePageState extends State<HomePage> {
       title: 'Seaside Escape',
       subtitle: '5 nights',
       assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+      location: 'Cornwall',
+      price: 'from GBP210 / 2 nights',
     ),
     _FeaturedEscape(
       title: 'Mountain Retreat',
       subtitle: '3 nights',
       assetPath: 'lib/screens/assets/mountain_retreat.jpeg',
+      location: 'Swiss Alps',
+      price: 'from GBP320 / 3 nights',
     ),
     _FeaturedEscape(
       title: 'Island Hideaway',
       subtitle: '7 nights',
       assetPath: 'lib/screens/assets/island_hideaway.jpeg',
+      location: 'Bali',
+      price: 'from GBP580 / 5 nights',
     ),
   ];
 
@@ -56,14 +66,57 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          'GreenGetaway',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+        titleSpacing: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.translate(
+              offset: const Offset(-8, 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  height: 160,
+                  width: 260,
+                  child: Image.asset(
+                    'lib/screens/assets/logo.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
+            ),
+          ],
         ),
+        actions: [
+          Transform.translate(
+            offset: const Offset(0, 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'Sign in',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'Register',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -113,17 +166,7 @@ class _HomePageState extends State<HomePage> {
                               }
                             },
                           ),
-                          const SizedBox(height: 24),
-                          const SectionTitle('Categories'),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: kCategories
-                                .map((cat) => CategoryPill(category: cat))
-                                .toList(),
-                          ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 18),
                           const SectionTitle('Featured Eco Escape'),
                           const SizedBox(height: 12),
                           SizedBox(
@@ -136,17 +179,32 @@ class _HomePageState extends State<HomePage> {
                                 final escape = _featuredEscapes[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 12),
-                                  child: FeaturedCard(
-                                    title: escape.title,
-                                    subtitle: escape.subtitle,
-                                    image: Image.asset(
-                                      escape.assetPath,
-                                      fit: BoxFit.cover,
+                                  child: GestureDetector(
+                                    onTap: () => widget.onSearchSubmit?.call(escape.location),
+                                    child: FeaturedCard(
+                                      title: escape.title,
+                                      subtitle: escape.subtitle,
+                                      location: escape.location,
+                                      price: escape.price,
+                                      image: Image.asset(
+                                        escape.assetPath,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 );
                               },
                             ),
+                          ),
+                          const SizedBox(height: 24),
+                          const SectionTitle('Categories'),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: kCategories
+                                .map((cat) => CategoryPill(category: cat))
+                                .toList(),
                           ),
                           // more sections (featured cards, trips) can follow...
                         ],

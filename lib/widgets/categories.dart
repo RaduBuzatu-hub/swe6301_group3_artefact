@@ -16,35 +16,41 @@ const List<CategoryItem> kCategories = [
 class CategoryPill extends StatelessWidget {
   final CategoryItem category;
   final double width;
+  final double height;
   const CategoryPill({
     super.key,
     required this.category,
-    this.width = 100,
+    this.width = 72,
+    this.height = 86,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      height: height,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.12),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(category.icon, color: Colors.white, size: 28),
-          const SizedBox(height: 8),
+          Icon(category.icon, color: Colors.white, size: 24),
+          const SizedBox(height: 6),
           Text(
             category.label,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFFF7DFA5),
               fontWeight: FontWeight.w600,
-              fontSize: 13,
+              fontSize: 12,
               letterSpacing: 0.1,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

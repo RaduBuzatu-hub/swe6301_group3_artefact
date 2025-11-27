@@ -1,43 +1,39 @@
 import 'package:flutter/material.dart';
-import '../data/eco_locations.dart';
 
-class ExplorePage extends StatelessWidget {
+class ExploreResultsPage extends StatelessWidget {
   final String query;
-  ExplorePage({super.key, String? query})
-      : query = (query ?? '').isEmpty ? 'Explore' : query!;
+  ExploreResultsPage({super.key, required String query})
+      : query = query.isEmpty ? 'Explore' : query;
 
-  List<EcoLocation> _filterResults() {
-    final q = query.toLowerCase().trim();
-    if (q.isEmpty || q == 'explore') return kEcoLocations;
-
-    final tokens = q.split(RegExp(r'[^a-z0-9]+')).where((t) => t.isNotEmpty).toList();
-
-    bool matches(EcoLocation item) {
-      final title = item.title.toLowerCase();
-      final loc = item.location.toLowerCase();
-      final tags = item.tags.map((t) => t.toLowerCase());
-      final tagString = item.tags.map((t) => t.toLowerCase()).join(' ');
-
-      // full query match (either direction)
-      if (title.contains(q) || loc.contains(q) || tagString.contains(q) || q.contains(loc)) {
-        return true;
-      }
-
-      // token match
-      for (final token in tokens) {
-        if (title.contains(token) || loc.contains(token) || tags.any((t) => t.contains(token))) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    return kEcoLocations.where(matches).toList();
-  }
+  final List<_ResultItem> _results = const [
+    _ResultItem(
+      title: 'Thames Eco Stay',
+      location: 'London · Zone 2',
+      meta: 'Local owned | Solar powered',
+      price: 'from GBP120 / 2 nights',
+      imageUrl:
+          'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&w=1200&q=80',
+    ),
+    _ResultItem(
+      title: 'Camden Green Hostel',
+      location: 'London',
+      meta: 'Vegan friendly | Free bikes',
+      price: 'from GBP68 / night',
+      imageUrl:
+          'https://images.unsplash.com/photo-1433838552652-f9a46b332c40?auto=format&w=1200&q=80',
+    ),
+    _ResultItem(
+      title: 'Cornwall Clifftop Cabin',
+      location: 'Cornwall',
+      meta: 'Sea view | Wood-fired hot tub',
+      price: 'from GBP210 / 2 nights',
+      imageUrl:
+          'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&w=1200&q=80',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filterResults();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -55,7 +51,7 @@ class ExplorePage extends StatelessWidget {
               ),
             ),
             Text(
-              '${filtered.length} eco-friendly results',
+              '12 eco-friendly results in UK',
               style: const TextStyle(
                 fontSize: 13,
                 color: Colors.white70,
@@ -115,9 +111,9 @@ class ExplorePage extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: filtered.length,
+                  itemCount: _results.length,
                   itemBuilder: (context, index) {
-                    final item = filtered[index];
+                    final item = _results[index];
                     return _ResultCard(item: item);
                   },
                 ),
@@ -153,8 +149,23 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _ResultItem {
+  final String title;
+  final String location;
+  final String meta;
+  final String price;
+  final String imageUrl;
+  const _ResultItem({
+    required this.title,
+    required this.location,
+    required this.meta,
+    required this.price,
+    required this.imageUrl,
+  });
+}
+
 class _ResultCard extends StatelessWidget {
-  final EcoLocation item;
+  final _ResultItem item;
   const _ResultCard({required this.item});
 
   @override

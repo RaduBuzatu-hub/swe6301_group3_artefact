@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class FeaturedCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String? location;
+  final String? price;
   final Widget? image; // e.g., Image.asset or Image.network
   const FeaturedCard({
     super.key,
     required this.title,
     required this.subtitle,
+    this.location,
+    this.price,
     this.image,
   });
 
@@ -47,7 +51,7 @@ class FeaturedCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: const Color(0xFFF7DFA5),
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -55,10 +59,30 @@ class FeaturedCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
+                        color: const Color(0xFFF7DFA5),
                         fontWeight: FontWeight.w500,
                       ),
                 ),
+                if (location != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    location!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFF7DFA5),
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+                if (price != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    price!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFF7DFA5),
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
               ],
             ),
           ),

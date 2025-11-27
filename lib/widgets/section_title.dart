@@ -9,7 +9,7 @@ class SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.white,
+            color: const Color(0xFF2EB85B),
             fontWeight: FontWeight.w700,
           ),
     );
