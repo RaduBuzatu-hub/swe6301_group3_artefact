@@ -4,6 +4,7 @@ import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
 import 'search_page.dart';
 import 'event_detail_page.dart';
+import 'activity_detail_page.dart';
 import '../models/trip_entry.dart';
 
 class HomePage extends StatefulWidget {
@@ -30,19 +31,26 @@ class _FeaturedEscape {
   });
 }
 
-class _CommunityCardData {
+class _ActivityCardData {
   final String title;
-  final String subtitle;
+  final String location;
+  final String tagPrimary;
+  final String tagSecondary;
   final String assetPath;
-  const _CommunityCardData({
+  final String priceDisplay;
+  const _ActivityCardData({
     required this.title,
-    required this.subtitle,
+    required this.location,
+    required this.tagPrimary,
+    required this.tagSecondary,
     required this.assetPath,
+    required this.priceDisplay,
   });
 }
 
 class _HomePageState extends State<HomePage> {
   final PageController _featuredController = PageController(viewportFraction: 0.9);
+  String _activityFilter = 'All';
 
   final List<_FeaturedEscape> _featuredEscapes = const [
     _FeaturedEscape(
@@ -68,21 +76,30 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  final List<_CommunityCardData> _communityCards = const [
-    _CommunityCardData(
+  final List<_ActivityCardData> _activities = const [
+    _ActivityCardData(
       title: 'Forest Replanting',
-      subtitle: 'Dartmoor',
+      location: 'Dartmoor',
+      tagPrimary: 'Outdoor',
+      tagSecondary: 'Half-day',
       assetPath: 'lib/screens/assets/mountain_retreat.jpeg',
+      priceDisplay: 'Free',
     ),
-    _CommunityCardData(
+    _ActivityCardData(
       title: 'Eco Cooking Workshop',
-      subtitle: 'EUR 10 - 2 hrs',
+      location: 'Lisbon',
+      tagPrimary: 'Workshop',
+      tagSecondary: 'EUR 10',
       assetPath: 'lib/screens/assets/island_hideaway.jpeg',
+      priceDisplay: 'EUR 10',
     ),
-    _CommunityCardData(
+    _ActivityCardData(
       title: 'Eco Cooking Workshop',
-      subtitle: 'Online',
+      location: 'Online',
+      tagPrimary: 'Online',
+      tagSecondary: '2 hrs',
       assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+      priceDisplay: 'Free',
     ),
   ];
 
@@ -230,167 +247,262 @@ class _HomePageState extends State<HomePage> {
                           const SizedBox(height: 24),
                           const SectionTitle('Eco Activities & Events'),
                           const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              for (final filter in ['All', 'Outdoor', 'Workshop', 'Online'])
+                                ChoiceChip(
+                                  label: Text(
+                                    filter,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  selected: _activityFilter == filter,
+                                  showCheckmark: true,
+                                  checkmarkColor: Colors.white,
+                                  selectedColor: const Color(0xFF7E57C2),
+                                  backgroundColor: const Color(0xFF7E57C2).withValues(alpha: 0.72),
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _activityFilter = filter;
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(22),
                             ),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: SizedBox(
-                                    height: 120,
-                                    width: 150,
-                                    child: Image.asset(
-                                      'lib/screens/assets/seaside_photo.jpeg',
-                                      fit: BoxFit.cover,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(22),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => EventDetailPage(
+                                      onJoin: () {
+                                        widget.onJoinTrip?.call(
+                                          TripEntry(
+                                            title: 'Beach Clean-Up - Saturday',
+                                            subtitle: 'Falmouth',
+                                            location: 'Falmouth',
+                                            price: 'Free - 10:00-13:00',
+                                            assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+                                            date: DateTime(2025, 10, 20, 10, 0),
+                                            isPast: false,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Beach Clean-Up - Saturday',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              color: const Color(0xFFF7DFA5),
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                );
+                              },
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: SizedBox(
+                                      height: 120,
+                                      width: 150,
+                                      child: Image.asset(
+                                        'lib/screens/assets/seaside_photo.jpeg',
+                                        fit: BoxFit.cover,
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Falmouth - 10:00-13:00',
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: const Color(0xFFF7DFA5),
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Free',
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: const Color(0xFFF7DFA5),
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFFA49CD7),
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 18,
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => EventDetailPage(
-                                                  onJoin: () {
-                                                    widget.onJoinTrip?.call(
-                                                      TripEntry(
-                                                        title: 'Beach Clean-Up - Saturday',
-                                                        subtitle: 'Falmouth',
-                                                        location: 'Falmouth',
-                                                        price: 'Free - 10:00-13:00',
-                                                        assetPath: 'lib/screens/assets/seaside_photo.jpeg',
-                                                        date: DateTime(2025, 10, 20, 10, 0),
-                                                        isPast: false,
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Beach Clean-Up - Saturday',
+                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                color: const Color(0xFFF7DFA5),
+                                                fontWeight: FontWeight.w700,
                                               ),
-                                            );
-                                          },
-                                          child: const Text(
-                                            'Join',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Falmouth - 10:00-13:00',
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                color: const Color(0xFFF7DFA5),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Free',
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                color: const Color(0xFFF7DFA5),
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFA49CD7),
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 18,
+                                                vertical: 10,
+                                              ),
+                                            ),
+                                            onPressed: () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => EventDetailPage(
+                                                    onJoin: () {
+                                                      widget.onJoinTrip?.call(
+                                                        TripEntry(
+                                                          title: 'Beach Clean-Up - Saturday',
+                                                          subtitle: 'Falmouth',
+                                                          location: 'Falmouth',
+                                                          price: 'Free - 10:00-13:00',
+                                                          assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+                                                          date: DateTime(2025, 10, 20, 10, 0),
+                                                          isPast: false,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: const Text(
+                                              'Join',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 36),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: _communityCards.map((card) {
-                              return Container(
-                                width: 116,
-                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Stack(
-                                    children: [
-                                      Positioned.fill(
-                                        child: Image.asset(
-                                          card.assetPath,
-                                          fit: BoxFit.cover,
+                          const SizedBox(height: 20),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final cardWidth = (constraints.maxWidth - 24) / 2;
+                              final filtered = _activities.where((a) {
+                                if (_activityFilter == 'All') return true;
+                                return a.tagPrimary.toLowerCase() ==
+                                    _activityFilter.toLowerCase();
+                              }).toList();
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: filtered.map((card) {
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      final result = await Navigator.of(context).push<TripEntry>(
+                                        MaterialPageRoute(
+                                          builder: (_) => ActivityDetailPage(
+                                            entry: TripEntry(
+                                              title: card.title,
+                                              subtitle: card.location,
+                                              location: card.location,
+                                              price: '${card.priceDisplay} - ${card.tagSecondary}',
+                                              assetPath: card.assetPath,
+                                              date: null,
+                                              isPast: false,
+                                            ),
+                                            tagPrimary: card.tagPrimary,
+                                            tagSecondary: card.tagSecondary,
+                                          ),
                                         ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
+                                      );
+                                      if (result != null) {
+                                        widget.onJoinTrip?.call(result);
+                                      }
+                                    },
+                                    child: Container(
+                                      width: cardWidth,
+                                      height: cardWidth * 0.75,
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.black.withValues(alpha: 0.25),
-                                            Colors.black.withValues(alpha: 0.45),
-                                          ],
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                        ),
+                                        borderRadius: BorderRadius.circular(18),
                                       ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(18),
+                                        child: Stack(
                                           children: [
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              card.title,
-                                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                                    color: const Color(0xFFF7DFA5),
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 14,
-                                                  ),
+                                            Positioned.fill(
+                                              child: Image.asset(
+                                                card.assetPath,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
-                                            const SizedBox(height: 7),
-                                            Text(
-                                              card.subtitle,
-                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                    color: const Color(0xFFF7DFA5),
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 12.5,
+                                            Positioned.fill(
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.black.withValues(alpha: 0.05),
+                                                      Colors.black.withValues(alpha: 0.55),
+                                                    ],
+                                                    begin: Alignment.topCenter,
+                                                    end: Alignment.bottomCenter,
                                                   ),
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.all(12),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    card.title,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w800,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    card.location,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                  const Spacer(),
+                                                  Wrap(
+                                                    spacing: 6,
+                                                    runSpacing: 4,
+                                                    children: [
+                                                      _ActivityTag(card.tagPrimary),
+                                                      _ActivityTag(card.tagSecondary),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
+                                    ),
+                                  );
+                                }).toList(),
                               );
-                            }).toList(),
+                            },
                           ),
                         ],
                       ),
@@ -401,6 +513,30 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActivityTag extends StatelessWidget {
+  final String label;
+  const _ActivityTag(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
       ),
     );
   }
