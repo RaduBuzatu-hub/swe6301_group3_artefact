@@ -3,6 +3,7 @@ import '../screens/home_page.dart';
 import '../screens/explore_page.dart';
 import '../screens/trips_page.dart';
 import '../screens/profile_page.dart';
+import '../models/trip_entry.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -14,6 +15,7 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   int _index = 0;
   String? _exploreQuery;
+  final List<TripEntry> _trips = [];
 
   void _handleSearchSubmit(String query) {
     setState(() {
@@ -22,14 +24,27 @@ class _BottomNavState extends State<BottomNav> {
     });
   }
 
+  void _handleJoinTrip(TripEntry trip) {
+    final exists = _trips.any((t) => t.title == trip.title && t.location == trip.location);
+    setState(() {
+      if (!exists) {
+        _trips.add(trip);
+      }
+      _index = 2; // go to Trips tab
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
 
     final pages = [
-      HomePage(onSearchSubmit: _handleSearchSubmit),
+      HomePage(
+        onSearchSubmit: _handleSearchSubmit,
+        onJoinTrip: _handleJoinTrip,
+      ),
       ExplorePage(query: _exploreQuery),
-      const TripsPage(),
+      TripsPage(trips: _trips),
       const ProfilePage(),
     ];
 

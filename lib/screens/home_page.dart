@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
-import '../widgets/categories.dart';
+﻿import 'package:flutter/material.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
 import 'search_page.dart';
+import 'event_detail_page.dart';
+import '../models/trip_entry.dart';
 
 class HomePage extends StatefulWidget {
   final ValueChanged<String>? onSearchSubmit;
-  const HomePage({super.key, this.onSearchSubmit});
+  final ValueChanged<TripEntry>? onJoinTrip;
+  const HomePage({super.key, this.onSearchSubmit, this.onJoinTrip});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,6 +27,19 @@ class _FeaturedEscape {
     required this.assetPath,
     required this.location,
     required this.price,
+  });
+}
+
+class _CommunityCardData {
+  final String title;
+  final String subtitle;
+  final String? extra;
+  final String assetPath;
+  const _CommunityCardData({
+    required this.title,
+    required this.subtitle,
+    required this.assetPath,
+    this.extra,
   });
 }
 
@@ -52,6 +67,24 @@ class _HomePageState extends State<HomePage> {
       assetPath: 'lib/screens/assets/island_hideaway.jpeg',
       location: 'Bali',
       price: 'from GBP580 / 5 nights',
+    ),
+  ];
+
+  final List<_CommunityCardData> _communityCards = const [
+    _CommunityCardData(
+      title: 'Forest Replanting',
+      subtitle: 'Dartmoor',
+      assetPath: 'lib/screens/assets/mountain_retreat.jpeg',
+    ),
+    _CommunityCardData(
+      title: 'Eco Cooking Workshop',
+      subtitle: 'EUR 10 - 2 hrs',
+      assetPath: 'lib/screens/assets/island_hideaway.jpeg',
+    ),
+    _CommunityCardData(
+      title: 'Eco Cooking Workshop',
+      subtitle: 'Online',
+      assetPath: 'lib/screens/assets/seaside_photo.jpeg',
     ),
   ];
 
@@ -197,16 +230,181 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          const SectionTitle('Categories'),
+                          const SectionTitle('Eco Activities & Events'),
                           const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: kCategories
-                                .map((cat) => CategoryPill(category: cat))
-                                .toList(),
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.14),
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: SizedBox(
+                                    height: 120,
+                                    width: 150,
+                                    child: Image.asset(
+                                      'lib/screens/assets/seaside_photo.jpeg',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Beach Clean-Up - Saturday',
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                              color: const Color(0xFFF7DFA5),
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Falmouth - 10:00-13:00',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                              color: const Color(0xFFF7DFA5),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Free',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                              color: const Color(0xFFF7DFA5),
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFA49CD7),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 18,
+                                              vertical: 10,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => EventDetailPage(
+                                                  onJoin: () {
+                                                    widget.onJoinTrip?.call(
+                                                      TripEntry(
+                                                        title: 'Beach Clean-Up - Saturday',
+                                                        subtitle: 'Falmouth',
+                                                        location: 'Falmouth',
+                                                        price: 'Free - 10:00-13:00',
+                                                        assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+                                                        date: DateTime(2025, 10, 20, 10, 0),
+                                                        isPast: false,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text(
+                                            'Join',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          // more sections (featured cards, trips) can follow...
+                          const SizedBox(height: 36),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: _communityCards.map((card) {
+                              return Container(
+                                width: 116,
+                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill(
+                                        child: Image.asset(
+                                          card.assetPath,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      Positioned.fill(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.black.withOpacity(0.25),
+                                                Colors.black.withOpacity(0.45),
+                                              ],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              card.title,
+                                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                                    color: const Color(0xFFF7DFA5),
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 14,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 7),
+                                            Text(
+                                              card.subtitle,
+                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                    color: const Color(0xFFF7DFA5),
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12.5,
+                                                  ),
+                                            ),
+                                            if (card.extra != null) ...[
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                card.extra!,
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                      color: const Color(0xFFF7DFA5),
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 11,
+                                                    ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ],
                       ),
                     ),
@@ -220,3 +418,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
