@@ -5,6 +5,8 @@ import '../widgets/section_title.dart';
 import 'search_page.dart';
 import 'event_detail_page.dart';
 import 'activity_detail_page.dart';
+import 'sign_in_page.dart';
+import 'sign_up_page.dart';
 import '../models/trip_entry.dart';
 
 class HomePage extends StatefulWidget {
@@ -141,7 +143,11 @@ class _HomePageState extends State<HomePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SignInPage()),
+                    );
+                  },
                   child: const Text(
                     'Sign in',
                     style: TextStyle(
@@ -151,7 +157,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SignUpPage()),
+                    );
+                  },
                   child: const Text(
                     'Register',
                     style: TextStyle(
