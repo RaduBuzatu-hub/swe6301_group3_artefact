@@ -31,7 +31,7 @@ class CategoryPill extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class TripEntry {
   final String title;
   final String subtitle;

@@ -33,13 +33,11 @@ class _FeaturedEscape {
 class _CommunityCardData {
   final String title;
   final String subtitle;
-  final String? extra;
   final String assetPath;
   const _CommunityCardData({
     required this.title,
     required this.subtitle,
     required this.assetPath,
-    this.extra,
   });
 }
 
@@ -235,7 +233,7 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.14),
+                              color: Colors.white.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(22),
                             ),
                             child: Row(
@@ -349,16 +347,16 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       Positioned.fill(
                                         child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Colors.black.withOpacity(0.25),
-                                                Colors.black.withOpacity(0.45),
-                                              ],
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                            ),
-                                          ),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.black.withValues(alpha: 0.25),
+                                            Colors.black.withValues(alpha: 0.45),
+                                          ],
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                        ),
+                                      ),
                                         ),
                                       ),
                                       Padding(
@@ -385,17 +383,6 @@ class _HomePageState extends State<HomePage> {
                                                     fontSize: 12.5,
                                                   ),
                                             ),
-                                            if (card.extra != null) ...[
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                card.extra!,
-                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                      color: const Color(0xFFF7DFA5),
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 11,
-                                                    ),
-                                              ),
-                                            ],
                                           ],
                                         ),
                                       ),
@@ -418,4 +405,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

@@ -195,7 +195,7 @@ class _SearchPageState extends State<SearchPage> {
                           )
                         : null,
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.14),
+                    fillColor: Colors.white.withValues(alpha: 0.14),
                     contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(28),

@@ -25,7 +25,7 @@ class HomeSearchBar extends StatelessWidget {
         ),
         prefixIcon: const Icon(Icons.search, color: Color(0xFFF7DFA5)),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.14),
+        fillColor: Colors.white.withValues(alpha: 0.14),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),

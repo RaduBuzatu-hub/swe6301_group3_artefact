@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/trip_entry.dart';
 
 class TripsPage extends StatefulWidget {
@@ -63,7 +63,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                 ],
               ),
               const SizedBox(height: 12),
-              Container(height: 1, color: Colors.white.withOpacity(0.35)),
+              Container(height: 1, color: Colors.white.withValues(alpha: 0.35)),
               const SizedBox(height: 16),
               Expanded(
                 child: cards.isEmpty
@@ -78,7 +78,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                       )
                     : ListView.separated(
                         itemCount: cards.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        separatorBuilder: (_, _) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final trip = cards[index];
                           return _TripCard(trip: trip);
@@ -143,7 +143,7 @@ class _TripCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
@@ -203,3 +203,4 @@ class _TripCard extends StatelessWidget {
     );
   }
 }
+

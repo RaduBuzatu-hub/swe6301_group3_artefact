@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       title: 'Travel App',
       theme: ThemeData(
         colorScheme: colorScheme,
-        scaffoldBackgroundColor: colorScheme.surfaceVariant,
+        scaffoldBackgroundColor: colorScheme.surfaceContainerHighest,
         useMaterial3: true,
       ),
       home: const BottomNav(),
