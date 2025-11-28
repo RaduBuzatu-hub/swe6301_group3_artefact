@@ -51,7 +51,7 @@ class EventDetailPage extends StatelessWidget {
             AspectRatio(
               aspectRatio: 16 / 9,
               child: Image.asset(
-                'lib/screens/assets/seaside_photo.jpeg',
+                'lib/screens/assets/beach_clean_up.png',
                 fit: BoxFit.cover,
               ),
             ),

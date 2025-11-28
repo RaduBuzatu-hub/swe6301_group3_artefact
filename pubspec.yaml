@@ -61,7 +61,9 @@ flutter:
 
   assets:
     - lib/screens/assets/home_page_background.jpeg
+    - lib/screens/assets/beach_clean_up.png
     - lib/screens/assets/seaside_photo.jpeg
+    - lib/screens/assets/forest_replanting.png
     - lib/screens/assets/island_hideaway.jpeg
     - lib/screens/assets/mountain_retreat.jpeg
     - lib/screens/assets/logo.png

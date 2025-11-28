@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
@@ -65,7 +65,7 @@ class _HomePageState extends State<HomePage> {
     _FeaturedEscape(
       title: 'Mountain Retreat',
       subtitle: '3 nights',
-      assetPath: 'lib/screens/assets/mountain_retreat.jpeg',
+      assetPath: 'lib/screens/assets/forest_replanting.png',
       location: 'Swiss Alps',
       price: 'from GBP320 / 3 nights',
     ),
@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> {
       location: 'Dartmoor',
       tagPrimary: 'Outdoor',
       tagSecondary: 'Half-day',
-      assetPath: 'lib/screens/assets/mountain_retreat.jpeg',
+      assetPath: 'lib/screens/assets/forest_replanting.png',
       priceDisplay: 'Free',
     ),
     _ActivityCardData(
@@ -100,7 +100,7 @@ class _HomePageState extends State<HomePage> {
       location: 'Online',
       tagPrimary: 'Online',
       tagSecondary: '2 hrs',
-      assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+      assetPath: 'lib/screens/assets/beach_clean_up.png',
       priceDisplay: 'Free',
     ),
   ];
@@ -303,7 +303,7 @@ class _HomePageState extends State<HomePage> {
                                             subtitle: 'Falmouth',
                                             location: 'Falmouth',
                                             price: 'Free - 10:00-13:00',
-                                            assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+                                            assetPath: 'lib/screens/assets/beach_clean_up.png',
                                             date: DateTime(2025, 10, 20, 10, 0),
                                             isPast: false,
                                           ),
@@ -321,7 +321,7 @@ class _HomePageState extends State<HomePage> {
                                       height: 120,
                                       width: 150,
                                       child: Image.asset(
-                                        'lib/screens/assets/seaside_photo.jpeg',
+                                        'lib/screens/assets/beach_clean_up.png',
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -380,7 +380,7 @@ class _HomePageState extends State<HomePage> {
                                                           subtitle: 'Falmouth',
                                                           location: 'Falmouth',
                                                           price: 'Free - 10:00-13:00',
-                                                          assetPath: 'lib/screens/assets/seaside_photo.jpeg',
+                                                          assetPath: 'lib/screens/assets/beach_clean_up.png',
                                                           date: DateTime(2025, 10, 20, 10, 0),
                                                           isPast: false,
                                                         ),
@@ -551,3 +551,5 @@ class _ActivityTag extends StatelessWidget {
     );
   }
 }
+
+
