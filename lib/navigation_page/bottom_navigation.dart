@@ -4,6 +4,8 @@ import '../screens/explore_page.dart';
 import '../screens/trips_page.dart';
 import '../screens/profile_page.dart';
 import '../models/trip_entry.dart';
+import '../data/eco_locations.dart';
+import '../screens/location_detail_page.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -16,6 +18,10 @@ class _BottomNavState extends State<BottomNav> {
   int _index = 0;
   String? _exploreQuery;
   final List<TripEntry> _trips = [];
+  final List<TripEntry> _savedActivities = [];
+
+  String _tripKey(String title, String location) =>
+      '${title.toLowerCase()}|${location.toLowerCase()}';
 
   void _handleSearchSubmit(String query) {
     setState(() {
@@ -34,6 +40,51 @@ class _BottomNavState extends State<BottomNav> {
     });
   }
 
+  void _toggleSavedActivity(EcoLocation location) {
+    final key = _tripKey(location.title, location.location);
+    final existingIndex =
+        _savedActivities.indexWhere((t) => _tripKey(t.title, t.location) == key);
+
+    setState(() {
+      if (existingIndex >= 0) {
+        _savedActivities.removeAt(existingIndex);
+      } else {
+        _savedActivities.add(
+          TripEntry(
+            title: location.title,
+            subtitle: location.meta,
+            location: location.location,
+            price: location.price,
+            imageUrl: location.imageUrl,
+            assetPath: null,
+            date: null,
+            isPast: false,
+          ),
+        );
+      }
+    });
+  }
+
+  void _bookLocation(EcoLocation location) {
+    final key = _tripKey(location.title, location.location);
+    final exists = _trips.any((t) => _tripKey(t.title, t.location) == key);
+    if (exists) return;
+    setState(() {
+      _trips.add(
+        TripEntry(
+          title: location.title,
+          subtitle: location.meta,
+          location: location.location,
+          price: location.price,
+          imageUrl: location.imageUrl,
+          assetPath: null,
+          date: DateTime.now(),
+          isPast: false,
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
@@ -43,8 +94,53 @@ class _BottomNavState extends State<BottomNav> {
         onSearchSubmit: _handleSearchSubmit,
         onJoinTrip: _handleJoinTrip,
       ),
-      ExplorePage(query: _exploreQuery),
-      TripsPage(trips: _trips),
+      ExplorePage(
+        query: _exploreQuery,
+        savedKeys: _savedActivities
+            .map((e) => _tripKey(e.title, e.location))
+            .toSet(),
+        onToggleSave: _toggleSavedActivity,
+        bookedKeys: _trips.map((e) => _tripKey(e.title, e.location)).toSet(),
+        onBookStay: _bookLocation,
+        onJoinTrip: _handleJoinTrip,
+        onViewTrips: () {
+          Navigator.of(context).pop();
+          setState(() {
+            _index = 2;
+          });
+        },
+      ),
+      TripsPage(
+        trips: _trips,
+        savedActivities: _savedActivities,
+        onOpenTrip: (trip) {
+          final location = EcoLocation(
+            title: trip.title,
+            location: trip.location,
+            meta: trip.subtitle,
+            price: trip.price,
+            imageUrl: trip.imageUrl ?? '',
+            tags: const [],
+          );
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => LocationDetailPage(
+                location: location,
+                isSaved: true,
+                isBooked: true,
+                onToggleSave: () {},
+                onBook: () {},
+                onViewTrips: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _index = 2;
+                  });
+                },
+              ),
+            ),
+          );
+        },
+      ),
       const ProfilePage(),
     ];
 

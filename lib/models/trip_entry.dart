@@ -3,7 +3,8 @@ class TripEntry {
   final String subtitle;
   final String location;
   final String price;
-  final String assetPath;
+  final String? assetPath;
+  final String? imageUrl;
   final DateTime? date;
   final bool isPast;
   const TripEntry({
@@ -11,7 +12,8 @@ class TripEntry {
     required this.subtitle,
     required this.location,
     required this.price,
-    required this.assetPath,
+    this.assetPath,
+    this.imageUrl,
     this.date,
     this.isPast = false,
   });

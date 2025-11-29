@@ -3,7 +3,14 @@ import '../models/trip_entry.dart';
 
 class TripsPage extends StatefulWidget {
   final List<TripEntry> trips;
-  const TripsPage({super.key, required this.trips});
+  final List<TripEntry> savedActivities;
+  final void Function(TripEntry trip)? onOpenTrip;
+  const TripsPage({
+    super.key,
+    required this.trips,
+    required this.savedActivities,
+    this.onOpenTrip,
+  });
 
   @override
   State<TripsPage> createState() => _TripsPageState();
@@ -66,29 +73,83 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
               Container(height: 1, color: Colors.white.withValues(alpha: 0.35)),
               const SizedBox(height: 16),
               Expanded(
-                child: cards.isEmpty
-                    ? Center(
-                        child: Text(
-                          _tabIndex == 0
-                              ? 'No upcoming trips yet.\nJoin an activity to save it here.'
-                              : 'No past trips yet.',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.4),
+                child: ListView(
+                  children: [
+                    if (cards.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Center(
+                          child: Text(
+                            _tabIndex == 0
+                                ? 'No upcoming trips yet.\nJoin an activity to save it here.'
+                                : 'No past trips yet.',
+                            textAlign: TextAlign.center,
+                            style:
+                                const TextStyle(color: Colors.white, fontSize: 15, height: 1.4),
+                          ),
                         ),
                       )
-                    : ListView.separated(
-                        itemCount: cards.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final trip = cards[index];
-                          return _TripCard(trip: trip);
-                        },
-                      ),
+                    else ...[
+                      for (int i = 0; i < cards.length; i++) ...[
+                        _TripCard(
+                          trip: cards[i],
+                          onTap: widget.onOpenTrip,
+                        ),
+                        if (i != cards.length - 1) const SizedBox(height: 16),
+                      ],
+                    ],
+                    const SizedBox(height: 28),
+                    _SavedSection(
+                      saved: widget.savedActivities,
+                      onTap: widget.onOpenTrip,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SavedSection extends StatelessWidget {
+  final List<TripEntry> saved;
+  final void Function(TripEntry trip)? onTap;
+  const _SavedSection({required this.saved, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Saved activities',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 12),
+        if (saved.isEmpty)
+          const Text(
+            'Tap the heart on an activity to save it here.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          )
+        else
+          Column(
+            children: [
+              for (int i = 0; i < saved.length; i++) ...[
+                _TripCard(
+                  trip: saved[i],
+                  onTap: onTap,
+                ),
+                if (i != saved.length - 1) const SizedBox(height: 16),
+              ],
+            ],
+          ),
+      ],
     );
   }
 }
@@ -136,71 +197,89 @@ class _TripsTabButton extends StatelessWidget {
 
 class _TripCard extends StatelessWidget {
   final TripEntry trip;
-  const _TripCard({required this.trip});
+  final void Function(TripEntry trip)? onTap;
+  const _TripCard({required this.trip, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              height: 96,
-              width: 96,
-              child: Image.asset(
-                trip.assetPath,
-                fit: BoxFit.cover,
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap != null ? () => onTap!(trip) : null,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 96,
+                width: 96,
+                child: trip.imageUrl != null && trip.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        trip.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.landscape, size: 32, color: Colors.grey),
+                        ),
+                      )
+                    : (trip.assetPath != null
+                        ? Image.asset(
+                            trip.assetPath!,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.landscape, size: 32, color: Colors.grey),
+                          )),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  trip.title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFFF7DFA5),
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  trip.subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFFF7DFA5),
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  trip.location,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFFF7DFA5),
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  trip.price,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFFF7DFA5),
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    trip.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFFF7DFA5),
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    trip.subtitle,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFFF7DFA5),
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    trip.location,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFF7DFA5),
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    trip.price,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFF7DFA5),
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-

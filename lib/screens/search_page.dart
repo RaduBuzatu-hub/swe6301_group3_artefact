@@ -64,7 +64,10 @@ class _SearchPageState extends State<SearchPage> {
   void _handleSubmit([String? value]) {
     final text = value ?? _controller.text;
     final normalized = text.trim();
-    if (normalized.isEmpty) return;
+    if (normalized.isEmpty) {
+      Navigator.of(context).pop('');
+      return;
+    }
     _saveRecent(normalized);
     _controller.clear();
     Navigator.of(context).pop(normalized);

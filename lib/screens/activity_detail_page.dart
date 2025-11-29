@@ -27,10 +27,24 @@ class ActivityDetailPage extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: Image.asset(
-                entry.assetPath,
-                fit: BoxFit.cover,
-              ),
+              child: entry.imageUrl != null && entry.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      entry.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.landscape, size: 48, color: Colors.grey),
+                      ),
+                    )
+                  : (entry.assetPath != null
+                      ? Image.asset(
+                          entry.assetPath!,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.landscape, size: 48, color: Colors.grey),
+                        )),
             ),
             Padding(
               padding: const EdgeInsets.all(20),

@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
-import 'navigation_page/bottom_navigation.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+import 'navigation_page/bottom_navigation.dart';
+import 'firebase_options.dart';
+
+Future<void> main() async {
+  // Firebase needs bindings and initialization before the app runs.
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
