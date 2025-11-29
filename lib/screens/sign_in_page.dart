@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'sign_up_page.dart';
 
 class SignInPage extends StatefulWidget {
@@ -12,6 +14,7 @@ class _SignInPageState extends State<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -115,15 +118,17 @@ class _SignInPageState extends State<SignInPage> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Signed in (mock)')),
-                                );
-                              },
-                              child: const Text(
-                                'Sign in',
-                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                              ),
+                              onPressed: _loading ? null : _signIn,
+                              child: _loading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Text(
+                                      'Sign in',
+                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -197,6 +202,55 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage('Please enter email and password.');
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } on FirebaseAuthException catch (e) {
+      _showMessage(_messageForCode(e.code));
+    } catch (_) {
+      _showMessage('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _messageForCode(String code) {
+    switch (code) {
+      case 'invalid-email':
+        return 'That email looks invalid.';
+      case 'user-disabled':
+        return 'This account is disabled.';
+      case 'user-not-found':
+      case 'wrong-password':
+        return 'Incorrect email or password.';
+      case 'too-many-requests':
+        return 'Too many attempts. Try again later.';
+      default:
+        return 'Unable to sign in right now.';
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }

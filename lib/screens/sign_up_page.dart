@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -12,6 +13,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -122,15 +124,17 @@ class _SignUpPageState extends State<SignUpPage> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Registered (mock)')),
-                                );
-                              },
-                              child: const Text(
-                                'Register',
-                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                              ),
+                              onPressed: _loading ? null : _register,
+                              child: _loading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Text(
+                                      'Register',
+                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -180,6 +184,56 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _register() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage('Please enter email and password.');
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (name.isNotEmpty) {
+        await cred.user?.updateDisplayName(name);
+      }
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } on FirebaseAuthException catch (e) {
+      _showMessage(_messageForCode(e.code));
+    } catch (_) {
+      _showMessage('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _messageForCode(String code) {
+    switch (code) {
+      case 'email-already-in-use':
+        return 'An account already exists for that email.';
+      case 'invalid-email':
+        return 'That email looks invalid.';
+      case 'weak-password':
+        return 'Password should be stronger (min 6 characters).';
+      default:
+        return 'Unable to create account right now.';
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }
