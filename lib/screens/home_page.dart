@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
@@ -8,11 +9,13 @@ import 'activity_detail_page.dart';
 import 'sign_in_page.dart';
 import 'sign_up_page.dart';
 import '../models/trip_entry.dart';
+import '../data/local_db.dart';
 
 class HomePage extends StatefulWidget {
   final ValueChanged<String>? onSearchSubmit;
   final ValueChanged<TripEntry>? onJoinTrip;
-  const HomePage({super.key, this.onSearchSubmit, this.onJoinTrip});
+  final VoidCallback? onOpenProfile;
+  const HomePage({super.key, this.onSearchSubmit, this.onJoinTrip, this.onOpenProfile});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -137,43 +140,120 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
-          Transform.translate(
-            offset: const Offset(0, 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SignInPage()),
+          Padding(
+            padding: const EdgeInsets.only(right: 10, top: 22),
+            child: StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    ),
+                  );
+                }
+                final user = snapshot.data;
+                if (user == null) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SignInPage()),
+                          );
+                        },
+                        child: const Text(
+                          'Sign in',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SignUpPage()),
+                          );
+                        },
+                        child: const Text(
+                          'Register',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return FutureBuilder<LocalProfile?>(
+                  future: LocalDb.instance.getProfile(user.uid),
+                  builder: (context, profileSnap) {
+                    final name = profileSnap.data?.displayName?.trim();
+                    final display = (name != null && name.isNotEmpty)
+                        ? name
+                        : (user.email ?? 'Logged in');
+                    final initial = (display.isNotEmpty ? display[0] : 'U').toUpperCase();
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: widget.onOpenProfile,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0.22),
+                              Colors.white.withValues(alpha: 0.12),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.white.withValues(alpha: 0.9),
+                              child: Text(
+                                initial,
+                                style: const TextStyle(
+                                  color: Color(0xFF4A148C),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              display,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
-                  child: const Text(
-                    'Sign in',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SignUpPage()),
-                    );
-                  },
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
-          const SizedBox(width: 4),
         ],
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -551,5 +631,3 @@ class _ActivityTag extends StatelessWidget {
     );
   }
 }
-
-

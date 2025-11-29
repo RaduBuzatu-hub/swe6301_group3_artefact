@@ -348,7 +348,7 @@ class _SignedInContent extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.9),
                         fontWeight: FontWeight.w700,
                       ),
-                    ),
+                      ),
                     if (profile.location?.isNotEmpty == true)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -369,26 +369,23 @@ class _SignedInContent extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(999),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(0, 0),
                 ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.lock_outline, color: Color(0xFFF7E7C5), size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'Local only',
-                      style: TextStyle(
-                        color: Color(0xFFF7E7C5),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                icon: const Icon(Icons.logout, size: 16),
+                label: const Text(
+                  'Sign out',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                 ),
+                onPressed: () => FirebaseAuth.instance.signOut(),
               ),
             ],
           ),

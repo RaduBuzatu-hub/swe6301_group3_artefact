@@ -262,6 +262,11 @@ class _BottomNavState extends State<BottomNav> {
       HomePage(
         onSearchSubmit: _handleSearchSubmit,
         onJoinTrip: _handleJoinTrip,
+        onOpenProfile: () {
+          setState(() {
+            _index = 3;
+          });
+        },
       ),
       ExplorePage(
         query: _exploreQuery,
