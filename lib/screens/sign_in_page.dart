@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'sign_up_page.dart';
+import '../data/local_db.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -214,12 +215,13 @@ class _SignInPageState extends State<SignInPage> {
       return;
     }
 
-      setState(() => _loading = true);
+    setState(() => _loading = true);
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      await _ensureLocalProfile(cred.user);
       if (mounted) Navigator.of(context).maybePop();
     } on FirebaseAuthException catch (e) {
       _showMessage(_messageForCode(e.code));
@@ -250,5 +252,23 @@ class _SignInPageState extends State<SignInPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  Future<void> _ensureLocalProfile(User? user) async {
+    if (user == null) return;
+    final existing = await LocalDb.instance.getProfile(user.uid);
+    if (existing != null) return;
+    final profile = LocalProfile(
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      bio: null,
+      photoUrl: user.photoURL,
+      location: null,
+      phone: null,
+      website: null,
+      updatedAt: DateTime.now(),
+    );
+    await LocalDb.instance.upsertProfile(profile);
   }
 }

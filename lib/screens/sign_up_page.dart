@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../data/local_db.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -138,6 +139,18 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           const SizedBox(height: 12),
+                          Center(
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () => Navigator.of(context).maybePop(),
+                              child: const Text(
+                                'Back',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -205,6 +218,21 @@ class _SignUpPageState extends State<SignUpPage> {
       );
       if (name.isNotEmpty) {
         await cred.user?.updateDisplayName(name);
+      }
+      final user = cred.user;
+      if (user != null) {
+        final profile = LocalProfile(
+          uid: user.uid,
+          displayName: name.isNotEmpty ? name : user.displayName,
+          email: user.email,
+          bio: null,
+          photoUrl: user.photoURL,
+          location: null,
+          phone: null,
+          website: null,
+          updatedAt: DateTime.now(),
+        );
+        await LocalDb.instance.upsertProfile(profile);
       }
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
