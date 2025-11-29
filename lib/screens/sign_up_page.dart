@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/local_db.dart';
 
+/// Registration flow; creates Firebase user then stores a local profile row.
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
@@ -221,6 +222,7 @@ class _SignUpPageState extends State<SignUpPage> {
       }
       final user = cred.user;
       if (user != null) {
+        // Ensure we have a local profile to mirror basic remote info.
         final profile = LocalProfile(
           uid: user.uid,
           displayName: name.isNotEmpty ? name : user.displayName,

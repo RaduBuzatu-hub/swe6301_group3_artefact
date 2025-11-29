@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/eco_locations.dart';
 
+/// Location detail page used for both saved and booked contexts.
 class LocationDetailPage extends StatefulWidget {
   final EcoLocation location;
   final bool isSaved;

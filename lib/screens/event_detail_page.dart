@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Detail page for a single event; invokes [onJoin] when user taps Join.
 class EventDetailPage extends StatelessWidget {
   final VoidCallback? onJoin;
   const EventDetailPage({super.key, this.onJoin});

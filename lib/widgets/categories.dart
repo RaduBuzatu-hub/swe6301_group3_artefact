@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 
+/// Simple data holder for a category name and icon.
 class CategoryItem {
   final String label;
   final IconData icon;
@@ -13,6 +15,7 @@ const List<CategoryItem> kCategories = [
   CategoryItem(label: 'Nature', icon: Icons.park),
 ];
 
+/// Displays a tappable pill for a given [CategoryItem].
 class CategoryPill extends StatelessWidget {
   final CategoryItem category;
   final double width;
@@ -27,12 +30,13 @@ class CategoryPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: Key('category.${category.label}'),
       width: width,
       height: height,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -44,7 +48,7 @@ class CategoryPill extends StatelessWidget {
             category.label,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Color(0xFFF7DFA5),
+              color: AppColors.highlight,
               fontWeight: FontWeight.w600,
               fontSize: 12,
               letterSpacing: 0.1,

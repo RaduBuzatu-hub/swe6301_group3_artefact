@@ -16,6 +16,7 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+/// Root widget configuring theme and bootstrapping BottomNav shell.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

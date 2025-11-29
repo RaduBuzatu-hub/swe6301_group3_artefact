@@ -6,6 +6,7 @@ import '../data/activities.dart';
 import '../models/trip_entry.dart';
 import 'activity_detail_page.dart';
 
+/// Explore destinations/activities; supports search query, saved/booked toggles, and filters.
 class ExplorePage extends StatefulWidget {
   final String? query;
   final Set<String> savedKeys;

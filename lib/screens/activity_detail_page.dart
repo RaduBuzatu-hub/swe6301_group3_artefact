@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/trip_entry.dart';
 
+/// Detail page for an activity; returns a [TripEntry] back to the caller when user taps "Join".
 class ActivityDetailPage extends StatelessWidget {
   final TripEntry entry;
   final String tagPrimary;
@@ -27,6 +28,7 @@ class ActivityDetailPage extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
+              // Prefer remote image; fall back to bundled asset; final fallback shows a placeholder icon.
               child: entry.imageUrl != null && entry.imageUrl!.isNotEmpty
                   ? Image.network(
                       entry.imageUrl!,
@@ -71,6 +73,7 @@ class ActivityDetailPage extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 6,
                     children: [
+                      // Tags render passed-in meta plus price for quick scanning / filtering.
                       _TagChip(label: tagPrimary),
                       _TagChip(label: tagSecondary),
                       _TagChip(label: entry.price),
@@ -105,6 +108,7 @@ class ActivityDetailPage extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
+                        // Pop with the entry so parent can add to itinerary/saved list.
                         Navigator.of(context).pop(entry);
                       },
                       child: const Text(
@@ -123,6 +127,7 @@ class ActivityDetailPage extends StatelessWidget {
   }
 }
 
+/// Small pill used to show activity tags (primary/secondary/price).
 class _TagChip extends StatelessWidget {
   final String label;
   const _TagChip({required this.label});

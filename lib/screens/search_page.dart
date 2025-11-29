@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Simple search UI that returns the submitted query via Navigator.pop.
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 

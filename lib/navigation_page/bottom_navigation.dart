@@ -14,6 +14,7 @@ import '../screens/sign_up_page.dart';
 import '../screens/auth_required_page.dart';
 import '../data/local_db.dart';
 
+/// Root shell with four tabs (Home, Explore, Trips, Profile) and shared state.
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
 
@@ -105,6 +106,7 @@ class _BottomNavState extends State<BottomNav> {
       });
       return;
     }
+    // Pull trips/saved items from local DB when user logs in.
     final tripsRows = await LocalDb.instance.getTrips(uid: user.uid, saved: false);
     final savedRows = await LocalDb.instance.getTrips(uid: user.uid, saved: true);
     setState(() {
@@ -148,6 +150,7 @@ class _BottomNavState extends State<BottomNav> {
   Future<void> _persistTrip(TripEntry trip, {required bool saved}) async {
     final uid = _uid;
     if (uid == null) return;
+    // Upsert ensures we keep one row per (uid, title, location).
     await LocalDb.instance.upsertTrip(
       uid: uid,
       data: _tripToMap(trip),
@@ -176,6 +179,7 @@ class _BottomNavState extends State<BottomNav> {
   Future<void> _persistSavedRemoval(EcoLocation location) async {
     final uid = _uid;
     if (uid == null) return;
+    // Remove saved trip for this user.
     await LocalDb.instance.deleteSavedActivity(
       uid: uid,
       title: location.title,

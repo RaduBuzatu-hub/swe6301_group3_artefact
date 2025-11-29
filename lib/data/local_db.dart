@@ -1,6 +1,7 @@
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+/// Simple profile model persisted in the local SQLite DB.
 class LocalProfile {
   final String uid;
   final String? displayName;
@@ -83,6 +84,7 @@ class LocalDb {
 
   Database? _db;
 
+  /// Initialize the local DB once; safe to call multiple times.
   Future<void> init() async {
     if (_db != null) return;
     final basePath = await getDatabasesPath();
@@ -195,6 +197,7 @@ class LocalDb {
   Future<void> upsertProfile(LocalProfile profile) async {
     final db = _db;
     if (db == null) return;
+    // Replace-or-insert to keep a single row per user.
     await db.insert(
       'profiles',
       profile.toMap(),
@@ -202,6 +205,7 @@ class LocalDb {
     );
   }
 
+  /// Save an activity/trip locally; [saved] chooses table (saved vs history).
   Future<void> upsertTrip({
     required String uid,
     required Map<String, dynamic> data,
@@ -222,6 +226,7 @@ class LocalDb {
     required String title,
     required String location,
   }) async {
+    // Remove a saved activity for a specific user and location.
     final db = _db;
     if (db == null) return;
     await db.delete(
@@ -235,6 +240,7 @@ class LocalDb {
     required String uid,
     required bool saved,
   }) async {
+    // Fetch saved or history entries ordered by newest date first.
     final db = _db;
     if (db == null) return [];
     final table = saved ? 'saved_activities' : 'trips';

@@ -5,6 +5,7 @@ import '../data/local_db.dart';
 import 'sign_in_page.dart';
 import 'sign_up_page.dart';
 
+/// Displays signed-in user info pulled from Firebase and local DB.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 

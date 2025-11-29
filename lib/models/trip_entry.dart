@@ -1,3 +1,5 @@
+/// UI-friendly model used across lists/detail screens to describe a trip/activity.
+/// Accepts either local [assetPath] or remote [imageUrl] for imagery.
 class TripEntry {
   final String title;
   final String subtitle;

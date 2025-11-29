@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'sign_up_page.dart';
 import '../data/local_db.dart';
 
+/// Email/password sign-in flow; on success seeds a local profile if missing.
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
 
@@ -256,6 +257,7 @@ class _SignInPageState extends State<SignInPage> {
 
   Future<void> _ensureLocalProfile(User? user) async {
     if (user == null) return;
+    // If we sign in for the first time on this device, create a local profile row.
     final existing = await LocalDb.instance.getProfile(user.uid);
     if (existing != null) return;
     final profile = LocalProfile(

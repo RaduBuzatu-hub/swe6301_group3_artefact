@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 
+/// Small featured trip card; tests can find it via `featured.card` key.
 class FeaturedCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -18,6 +20,7 @@ class FeaturedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const Key('featured.card'),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.14),
@@ -51,7 +54,7 @@ class FeaturedCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFFF7DFA5),
+                        color: AppColors.highlight,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -59,7 +62,7 @@ class FeaturedCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFFF7DFA5),
+                        color: AppColors.highlight,
                         fontWeight: FontWeight.w500,
                       ),
                 ),
@@ -68,7 +71,7 @@ class FeaturedCard extends StatelessWidget {
                   Text(
                     location!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFFF7DFA5),
+                          color: AppColors.highlight,
                           fontWeight: FontWeight.w600,
                         ),
                   ),
@@ -78,7 +81,7 @@ class FeaturedCard extends StatelessWidget {
                   Text(
                     price!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFFF7DFA5),
+                          color: AppColors.highlight,
                           fontWeight: FontWeight.w700,
                         ),
                   ),

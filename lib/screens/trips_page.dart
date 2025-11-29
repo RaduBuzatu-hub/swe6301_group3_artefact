@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import '../models/trip_entry.dart';
 
+/// Shows current trips and saved activities; navigated from BottomNav Trips tab.
 class TripsPage extends StatefulWidget {
   final List<TripEntry> trips;
   final List<TripEntry> savedActivities;

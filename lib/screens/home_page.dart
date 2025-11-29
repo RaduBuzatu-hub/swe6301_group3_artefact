@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
@@ -11,6 +12,8 @@ import 'sign_up_page.dart';
 import '../models/trip_entry.dart';
 import '../data/local_db.dart';
 
+/// Main landing screen showing featured escapes, filters, and activities.
+/// Host can hook into [onSearchSubmit], [onJoinTrip], and [onOpenProfile] for navigation.
 class HomePage extends StatefulWidget {
   final ValueChanged<String>? onSearchSubmit;
   final ValueChanged<TripEntry>? onJoinTrip;
@@ -21,6 +24,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+/// View-model for featured carousel items.
 class _FeaturedEscape {
   final String title;
   final String subtitle;
@@ -36,6 +40,7 @@ class _FeaturedEscape {
   });
 }
 
+/// View-model for activities rendered in the grid cards.
 class _ActivityCardData {
   final String title;
   final String location;
@@ -53,9 +58,12 @@ class _ActivityCardData {
   });
 }
 
+/// Splits the HomePage UI into small builders to ease testing and readability.
 class _HomePageState extends State<HomePage> {
   final PageController _featuredController = PageController(viewportFraction: 0.9);
   String _activityFilter = 'All';
+  // Filters used to drive ChoiceChips; also double as locator labels.
+  static const List<String> _filters = ['All', 'Outdoor', 'Workshop', 'Online'];
 
   final List<_FeaturedEscape> _featuredEscapes = const [
     _FeaturedEscape(
@@ -227,17 +235,17 @@ class _HomePageState extends State<HomePage> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Colors.white.withValues(alpha: 0.9),
-                              child: Text(
-                                initial,
-                                style: const TextStyle(
-                                  color: Color(0xFF4A148C),
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: Colors.white.withValues(alpha: 0.9),
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: Color(0xFF4A148C),
+                              fontWeight: FontWeight.w800,
                             ),
+                          ),
+                        ),
                             const SizedBox(width: 8),
                             Text(
                               display,
@@ -288,313 +296,20 @@ class _HomePageState extends State<HomePage> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: AppSpacing.page,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 12),
-                          HomeSearchBar(
-                            onTap: () async {
-                              final result = await Navigator.of(context).push<String>(
-                                MaterialPageRoute(
-                                  builder: (_) => const SearchPage(),
-                                ),
-                              );
-                              if (result != null && result.trim().isNotEmpty) {
-                                widget.onSearchSubmit?.call(result.trim());
-                              }
-                            },
-                          ),
+                          _buildSearchBar(context),
                           const SizedBox(height: 18),
-                          const SectionTitle('Featured Eco Escape'),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 140,
-                            child: PageView.builder(
-                              controller: _featuredController,
-                              padEnds: false,
-                              itemCount: _featuredEscapes.length,
-                              itemBuilder: (context, index) {
-                                final escape = _featuredEscapes[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: GestureDetector(
-                                    onTap: () => widget.onSearchSubmit?.call(escape.location),
-                                    child: FeaturedCard(
-                                      title: escape.title,
-                                      subtitle: escape.subtitle,
-                                      location: escape.location,
-                                      price: escape.price,
-                                      image: Image.asset(
-                                        escape.assetPath,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                          _buildFeaturedCarousel(),
                           const SizedBox(height: 24),
-                          const SectionTitle('Eco Activities & Events'),
+                          _buildActivitiesSection(),
                           const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              for (final filter in ['All', 'Outdoor', 'Workshop', 'Online'])
-                                ChoiceChip(
-                                  label: Text(
-                                    filter,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  selected: _activityFilter == filter,
-                                  showCheckmark: true,
-                                  checkmarkColor: Colors.white,
-                                  selectedColor: const Color(0xFF7E57C2),
-                                  backgroundColor: const Color(0xFF7E57C2).withValues(alpha: 0.72),
-                                  onSelected: (_) {
-                                    setState(() {
-                                      _activityFilter = filter;
-                                    });
-                                  },
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(22),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(22),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => EventDetailPage(
-                                      onJoin: () {
-                                        widget.onJoinTrip?.call(
-                                          TripEntry(
-                                            title: 'Beach Clean-Up - Saturday',
-                                            subtitle: 'Falmouth',
-                                            location: 'Falmouth',
-                                            price: 'Free - 10:00-13:00',
-                                            assetPath: 'lib/screens/assets/beach_clean_up.png',
-                                            date: DateTime(2025, 10, 20, 10, 0),
-                                            isPast: false,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Row(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: SizedBox(
-                                      height: 120,
-                                      width: 150,
-                                      child: Image.asset(
-                                        'lib/screens/assets/beach_clean_up.png',
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Beach Clean-Up - Saturday',
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                color: const Color(0xFFF7DFA5),
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Falmouth - 10:00-13:00',
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: const Color(0xFFF7DFA5),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Free',
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: const Color(0xFFF7DFA5),
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFFA49CD7),
-                                              foregroundColor: Colors.white,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(16),
-                                              ),
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 18,
-                                                vertical: 10,
-                                              ),
-                                            ),
-                                            onPressed: () {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) => EventDetailPage(
-                                                    onJoin: () {
-                                                      widget.onJoinTrip?.call(
-                                                        TripEntry(
-                                                          title: 'Beach Clean-Up - Saturday',
-                                                          subtitle: 'Falmouth',
-                                                          location: 'Falmouth',
-                                                          price: 'Free - 10:00-13:00',
-                                                          assetPath: 'lib/screens/assets/beach_clean_up.png',
-                                                          date: DateTime(2025, 10, 20, 10, 0),
-                                                          isPast: false,
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: const Text(
-                                              'Join',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          _buildEventHighlight(context),
                           const SizedBox(height: 20),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final cardWidth = (constraints.maxWidth - 24) / 2;
-                              final filtered = _activities.where((a) {
-                                if (_activityFilter == 'All') return true;
-                                return a.tagPrimary.toLowerCase() ==
-                                    _activityFilter.toLowerCase();
-                              }).toList();
-                              return Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                children: filtered.map((card) {
-                                  return GestureDetector(
-                                    onTap: () async {
-                                      final result = await Navigator.of(context).push<TripEntry>(
-                                        MaterialPageRoute(
-                                          builder: (_) => ActivityDetailPage(
-                                            entry: TripEntry(
-                                              title: card.title,
-                                              subtitle: card.location,
-                                              location: card.location,
-                                              price: '${card.priceDisplay} - ${card.tagSecondary}',
-                                              assetPath: card.assetPath,
-                                              date: null,
-                                              isPast: false,
-                                            ),
-                                            tagPrimary: card.tagPrimary,
-                                            tagSecondary: card.tagSecondary,
-                                          ),
-                                        ),
-                                      );
-                                      if (result != null) {
-                                        widget.onJoinTrip?.call(result);
-                                      }
-                                    },
-                                    child: Container(
-                                      width: cardWidth,
-                                      height: cardWidth * 0.75,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(18),
-                                        child: Stack(
-                                          children: [
-                                            Positioned.fill(
-                                              child: Image.asset(
-                                                card.assetPath,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                            Positioned.fill(
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    colors: [
-                                                      Colors.black.withValues(alpha: 0.05),
-                                                      Colors.black.withValues(alpha: 0.55),
-                                                    ],
-                                                    begin: Alignment.topCenter,
-                                                    end: Alignment.bottomCenter,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.all(12),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    card.title,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.w800,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    card.location,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 13,
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  Wrap(
-                                                    spacing: 6,
-                                                    runSpacing: 4,
-                                                    children: [
-                                                      _ActivityTag(card.tagPrimary),
-                                                      _ActivityTag(card.tagSecondary),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              );
-                            },
-                          ),
+                          _buildActivitiesGrid(),
                         ],
                       ),
                     ),
@@ -607,6 +322,334 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  Widget _buildSearchBar(BuildContext context) {
+    return HomeSearchBar(
+      onTap: () async {
+        // Route to search page and bubble a result back up to parent when selected.
+        final result = await Navigator.of(context).push<String>(
+          MaterialPageRoute(
+            builder: (_) => const SearchPage(),
+          ),
+        );
+        if (result != null && result.trim().isNotEmpty) {
+          widget.onSearchSubmit?.call(result.trim());
+        }
+      },
+    );
+  }
+
+  Widget _buildFeaturedCarousel() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Featured Eco Escape', testKey: Key('home.featured.title')),
+        AppSpacing.itemGap,
+        SizedBox(
+          height: 140,
+          child: PageView.builder(
+            key: const Key('home.featured.carousel'),
+            controller: _featuredController,
+            padEnds: false,
+            itemCount: _featuredEscapes.length,
+            itemBuilder: (context, index) {
+              final escape = _featuredEscapes[index];
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: GestureDetector(
+                  onTap: () => widget.onSearchSubmit?.call(escape.location),
+                  child: FeaturedCard(
+                    title: escape.title,
+                    subtitle: escape.subtitle,
+                    location: escape.location,
+                    price: escape.price,
+                    image: Image.asset(
+                      escape.assetPath,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivitiesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Eco Activities & Events', testKey: Key('home.activities.title')),
+        AppSpacing.itemGap,
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: _filters
+              .map(
+                (filter) => ChoiceChip(
+                  key: Key('home.filter.$filter'),
+                  label: Text(
+                    filter,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  selected: _activityFilter == filter,
+                  showCheckmark: true,
+                  checkmarkColor: Colors.white,
+                  selectedColor: AppColors.accent,
+                  backgroundColor: AppColors.accent.withValues(alpha: 0.72),
+                  onSelected: (_) {
+                    setState(() {
+                      _activityFilter = filter;
+                    });
+                  },
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEventHighlight(BuildContext context) {
+    return Container(
+      key: const Key('home.eventHighlight'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EventDetailPage(
+                onJoin: () {
+                  widget.onJoinTrip?.call(
+                    TripEntry(
+                      title: 'Beach Clean-Up - Saturday',
+                      subtitle: 'Falmouth',
+                      location: 'Falmouth',
+                      price: 'Free - 10:00-13:00',
+                      assetPath: 'lib/screens/assets/beach_clean_up.png',
+                      date: DateTime(2025, 10, 20, 10, 0),
+                      isPast: false,
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 120,
+                width: 150,
+                child: Image.asset(
+                  'lib/screens/assets/beach_clean_up.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Beach Clean-Up - Saturday',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.highlight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Falmouth - 10:00-13:00',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.highlight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Free',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.highlight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFA49CD7),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => EventDetailPage(
+                              onJoin: () {
+                                widget.onJoinTrip?.call(
+                                  TripEntry(
+                                    title: 'Beach Clean-Up - Saturday',
+                                    subtitle: 'Falmouth',
+                                    location: 'Falmouth',
+                                    price: 'Free - 10:00-13:00',
+                                    assetPath: 'lib/screens/assets/beach_clean_up.png',
+                                    date: DateTime(2025, 10, 20, 10, 0),
+                                    isPast: false,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Join',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivitiesGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - 24) / 2;
+        final filtered = _activities.where((a) {
+          if (_activityFilter == 'All') return true;
+          return a.tagPrimary.toLowerCase() == _activityFilter.toLowerCase();
+        }).toList();
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: filtered.map((card) {
+            return GestureDetector(
+              onTap: () async {
+                final result = await Navigator.of(context).push<TripEntry>(
+                  MaterialPageRoute(
+                    builder: (_) => ActivityDetailPage(
+                      entry: TripEntry(
+                        title: card.title,
+                        subtitle: card.location,
+                        location: card.location,
+                        price: '${card.priceDisplay} - ${card.tagSecondary}',
+                        assetPath: card.assetPath,
+                        date: null,
+                        isPast: false,
+                      ),
+                      tagPrimary: card.tagPrimary,
+                      tagSecondary: card.tagSecondary,
+                    ),
+                  ),
+                );
+                if (result != null) {
+                  widget.onJoinTrip?.call(result);
+                }
+              },
+              child: Container(
+                key: Key('home.activity.${card.title}.${card.location}'),
+                width: cardWidth,
+                height: cardWidth * 0.75,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.asset(
+                          card.assetPath,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.black.withValues(alpha: 0.05),
+                                Colors.black.withValues(alpha: 0.55),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              card.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              card.location,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const Spacer(),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                _ActivityTag(card.tagPrimary),
+                                _ActivityTag(card.tagSecondary),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
 }
 
 class _ActivityTag extends StatelessWidget {
@@ -615,11 +658,13 @@ class _ActivityTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tag is keyed so tests can assert presence of primary/secondary labels.
     return Container(
+      key: Key('home.tag.$label'),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
       ),
       child: Text(
         label,

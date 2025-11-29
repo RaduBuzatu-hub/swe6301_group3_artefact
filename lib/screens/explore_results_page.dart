@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Lightweight list of search results rendered as cards.
 class ExploreResultsPage extends StatelessWidget {
   final String query;
   ExploreResultsPage({super.key, required String query})
