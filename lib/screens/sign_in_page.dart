@@ -60,7 +60,7 @@ class _SignInPageState extends State<SignInPage> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                                onPressed: () => Navigator.of(context).pop(),
+                                onPressed: () => Navigator.of(context).maybePop(),
                               ),
                               const Spacer(),
                               ClipRRect(
@@ -214,15 +214,13 @@ class _SignInPageState extends State<SignInPage> {
       return;
     }
 
-    setState(() => _loading = true);
+      setState(() => _loading = true);
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      if (mounted) Navigator.of(context).maybePop();
     } on FirebaseAuthException catch (e) {
       _showMessage(_messageForCode(e.code));
     } catch (_) {
