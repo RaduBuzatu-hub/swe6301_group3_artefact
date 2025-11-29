@@ -105,76 +105,83 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
       child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Profile',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Profile',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.lock_outline, color: Colors.white70),
-                ],
-              ),
-              const SizedBox(height: 16),
-              StreamBuilder<User?>(
-                stream: FirebaseAuth.instance.authStateChanges(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    );
-                  }
-                  final user = snapshot.data;
-                  if (user == null) {
-                    return const _AuthCard();
-                  }
+                        const Spacer(),
+                        const Icon(Icons.lock_outline, color: Colors.white70),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    StreamBuilder<User?>(
+                      stream: FirebaseAuth.instance.authStateChanges(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(color: Colors.white),
+                            ),
+                          );
+                        }
+                        final user = snapshot.data;
+                        if (user == null) {
+                          return const _AuthCard();
+                        }
 
-                  if (_currentUser?.uid != user.uid || _profileFuture == null) {
-                    _refreshProfile(user);
-                  }
+                        if (_currentUser?.uid != user.uid || _profileFuture == null) {
+                          _refreshProfile(user);
+                        }
 
-                  return FutureBuilder<LocalProfile?>(
-                    future: _profileFuture,
-                    builder: (context, profileSnapshot) {
-                      if (profileSnapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(color: Colors.white),
-                          ),
+                        return FutureBuilder<LocalProfile?>(
+                          future: _profileFuture,
+                          builder: (context, profileSnapshot) {
+                            if (profileSnapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator(color: Colors.white),
+                                ),
+                              );
+                            }
+                            final profile = profileSnapshot.data;
+                            if (profile == null) {
+                              return const _AuthCard();
+                            }
+                            _syncControllers(profile);
+                            return _SignedInContent(
+                              profile: profile,
+                              nameController: _nameController,
+                              email: profile.email ?? 'No email',
+                              phoneController: _phoneController,
+                              locationController: _locationController,
+                              bioController: _bioController,
+                              onSave: () => _saveProfile(profile),
+                            );
+                          },
                         );
-                      }
-                      final profile = profileSnapshot.data;
-                      if (profile == null) {
-                        return const _AuthCard();
-                      }
-                      _syncControllers(profile);
-                      return _SignedInContent(
-                        profile: profile,
-                        nameController: _nameController,
-                        email: profile.email ?? 'No email',
-                        phoneController: _phoneController,
-                        locationController: _locationController,
-                        bioController: _bioController,
-                        onSave: () => _saveProfile(profile),
-                      );
-                    },
-                  );
-                },
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -493,63 +500,6 @@ class _SignedInContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Quick actions',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              _ActionRow(icon: Icons.notifications_none, label: 'Notifications', trailing: 'Off'),
-              const SizedBox(height: 8),
-              _ActionRow(icon: Icons.bar_chart_outlined, label: 'Statistics', trailing: 'Soon'),
-              const SizedBox(height: 8),
-              _ActionRow(icon: Icons.settings_outlined, label: 'Settings'),
-              const SizedBox(height: 8),
-              _ActionRow(icon: Icons.help_outline, label: 'Help & support'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ActionRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? trailing;
-
-  const _ActionRow({required this.icon, required this.label, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white70),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-          ),
-        ),
-        if (trailing != null)
-          Text(
-            trailing!,
-            style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
-          ),
-        const SizedBox(width: 4),
-        Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.7)),
       ],
     );
   }

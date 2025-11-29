@@ -435,6 +435,22 @@ class _ExplorePageState extends State<ExplorePage> {
                                   ),
                                 ),
                               ),
+                              if (_currentQuery.isNotEmpty && _currentQuery != 'Explore')
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _currentQuery = 'Explore';
+                                      _activeFilters.clear();
+                                    });
+                                  },
+                                  child: const Text(
+                                    'Clear',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),

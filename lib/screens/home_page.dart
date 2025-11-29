@@ -128,8 +128,8 @@ class _HomePageState extends State<HomePage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
-                  height: 160,
-                  width: 260,
+                  height: 140,
+                  width: 200,
                   child: Image.asset(
                     'lib/screens/assets/logo.png',
                     fit: BoxFit.cover,
@@ -141,7 +141,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 10, top: 22),
+            padding: const EdgeInsets.only(right: 10, top: 14),
             child: StreamBuilder<User?>(
               stream: FirebaseAuth.instance.authStateChanges(),
               builder: (context, snapshot) {
@@ -188,6 +188,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 4),
                     ],
                   );
                 }
