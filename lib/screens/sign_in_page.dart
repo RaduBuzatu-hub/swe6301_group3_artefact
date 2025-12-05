@@ -244,6 +244,12 @@ class _SignInPageState extends State<SignInPage> {
         return 'Incorrect email or password.';
       case 'too-many-requests':
         return 'Too many attempts. Try again later.';
+      case 'operation-not-allowed':
+        return 'Email/password sign-in is disabled for this project.';
+      case 'invalid-credential':
+        return 'The email or password is incorrect.';
+      case 'network-request-failed':
+        return 'No network connection. Check your internet and try again.';
       default:
         return 'Unable to sign in right now.';
     }
