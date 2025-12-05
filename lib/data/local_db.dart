@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
@@ -87,6 +88,11 @@ class LocalDb {
   /// Initialize the local DB once; safe to call multiple times.
   Future<void> init() async {
     if (_db != null) return;
+    // Web has no sqflite implementation; fall back to in-memory (no-op) storage.
+    if (kIsWeb) {
+      _db = null;
+      return;
+    }
     final basePath = await getDatabasesPath();
     final dbPath = p.join(basePath, 'green_getaway.db');
     _db = await openDatabase(
