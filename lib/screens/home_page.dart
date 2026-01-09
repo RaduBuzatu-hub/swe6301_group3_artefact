@@ -128,24 +128,23 @@ class _HomePageState extends State<HomePage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         titleSpacing: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Transform.translate(
-              offset: const Offset(-8, 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 140,
-                  width: 200,
-                  child: Image.asset(
-                    'lib/screens/assets/logo.png',
-                    fit: BoxFit.cover,
-                  ),
+        title: Transform.translate(
+          offset: const Offset(-8, 8),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                height: 140,
+                width: 200,
+                child: Image.asset(
+                  'lib/screens/assets/logo.png',
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-          ],
+          ),
         ),
         actions: [
           Padding(

@@ -4,10 +4,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'navigation_page/bottom_navigation.dart';
 import 'firebase_options.dart';
 import 'data/local_db.dart';
+import 'data/database_factory_stub.dart'
+    if (dart.library.io) 'data/database_factory_io.dart';
 
 Future<void> main() async {
   // Firebase needs bindings and initialization before the app runs.
   WidgetsFlutterBinding.ensureInitialized();
+  initDatabaseFactory();
   await LocalDb.instance.init();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
