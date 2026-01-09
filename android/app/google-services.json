@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "439254978016",
+    "project_id": "swe6301group3",
+    "storage_bucket": "swe6301group3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:439254978016:android:07d78fc243ad1bb8e2ef85",
+        "android_client_info": {
+          "package_name": "com.example.bogdan_test_login_page"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBprkk4plHpM7PvIzL4-4Pgl7ruxvWKF7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:439254978016:android:59e6c4bcb388be09e2ef85",
+        "android_client_info": {
+          "package_name": "com.example.swe6301_group3_artefact"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBprkk4plHpM7PvIzL4-4Pgl7ruxvWKF7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

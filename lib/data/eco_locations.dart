@@ -1,0 +1,95 @@
+import 'package:flutter/material.dart';
+
+@immutable
+class EcoLocation {
+  final String title;
+  final String location;
+  final String meta;
+  final String price;
+  final String imageUrl;
+  final List<String> tags;
+
+  const EcoLocation({
+    required this.title,
+    required this.location,
+    required this.meta,
+    required this.price,
+    required this.imageUrl,
+    this.tags = const [],
+  });
+}
+
+const List<EcoLocation> kEcoLocations = [
+  EcoLocation(
+    title: 'Thames Eco Stay',
+    location: 'London · Zone 2',
+    meta: 'Local owned · Solar powered',
+    price: 'from GBP120 / 2 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&w=1200&q=80',
+    tags: ['london', 'train', 'uk'],
+  ),
+  EcoLocation(
+    title: 'Camden Green Hostel',
+    location: 'London',
+    meta: 'Vegan friendly · Free bikes',
+    price: 'from GBP68 / night',
+    imageUrl:
+        'https://images.unsplash.com/photo-1433838552652-f9a46b332c40?auto=format&w=1200&q=80',
+    tags: ['london', 'budget', 'hostel', 'uk'],
+  ),
+  EcoLocation(
+    title: 'Cornwall Clifftop Cabin',
+    location: 'Cornwall',
+    meta: 'Sea view · Wood-fired hot tub',
+    price: 'from GBP210 / 2 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&w=1200&q=80',
+    tags: ['cornwall', 'sea', 'uk'],
+  ),
+  EcoLocation(
+    title: 'Cornwall Eco Farmstay',
+    location: 'Cornwall',
+    meta: 'Organic farm · Solar powered',
+    price: 'from GBP140 / 2 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&w=1200&q=80',
+    tags: ['cornwall', 'farm', 'uk'],
+  ),
+  EcoLocation(
+    title: 'Lake District Lodge',
+    location: 'Lake District',
+    meta: 'Wood-fired sauna · Lakeside',
+    price: 'from GBP180 / 2 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&w=1200&q=80',
+    tags: ['lake', 'uk', 'lodge'],
+  ),
+  EcoLocation(
+    title: 'Seaside Escape',
+    location: 'Cornwall',
+    meta: 'Clifftop views · Private cove',
+    price: 'from GBP210 / 2 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&w=1200&q=80',
+    tags: ['cornwall', 'sea', 'escape'],
+  ),
+  EcoLocation(
+    title: 'Mountain Retreat',
+    location: 'Swiss Alps',
+    meta: 'Chalet · Sauna · Glacier hikes',
+    price: 'from GBP320 / 3 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&w=1200&q=80',
+    tags: ['alps', 'mountain', 'switzerland'],
+  ),
+  EcoLocation(
+    title: 'Island Hideaway',
+    location: 'Bali',
+    meta: 'Jungle villa · Plunge pool',
+    price: 'from GBP580 / 5 nights',
+    imageUrl:
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&w=1200&q=80',
+    tags: ['bali', 'island', 'asia'],
+  ),
+];
