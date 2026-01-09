@@ -17,6 +17,7 @@ class _SignInPageState extends State<SignInPage> {
   final _passwordController = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
+  bool _resetting = false;
 
   @override
   void dispose() {
@@ -106,6 +107,28 @@ class _SignInPageState extends State<SignInPage> {
                                 color: Colors.white70,
                               ),
                               onPressed: () => setState(() => _obscure = !_obscure),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _resetting ? null : _sendPasswordReset,
+                              child: _resetting
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Forgot password?',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -230,6 +253,41 @@ class _SignInPageState extends State<SignInPage> {
       _showMessage('Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showMessage('Enter your email to receive a reset link.');
+      return;
+    }
+
+    setState(() => _resetting = true);
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      _showMessage('If an account exists, a reset link was sent.');
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'invalid-email':
+          _showMessage('That email looks invalid.');
+          break;
+        case 'user-not-found':
+          _showMessage('If an account exists, a reset link was sent.');
+          break;
+        case 'too-many-requests':
+          _showMessage('Too many attempts. Try again later.');
+          break;
+        case 'network-request-failed':
+          _showMessage('No network connection. Check your internet and try again.');
+          break;
+        default:
+          _showMessage('Unable to send reset email right now.');
+      }
+    } catch (_) {
+      _showMessage('Unable to send reset email right now.');
+    } finally {
+      if (mounted) setState(() => _resetting = false);
     }
   }
 
