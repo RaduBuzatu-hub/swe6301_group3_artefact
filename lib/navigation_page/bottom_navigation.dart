@@ -128,8 +128,16 @@ class _BottomNavState extends State<BottomNav> {
       'image_url': trip.imageUrl,
       'asset_path': trip.assetPath,
       'date_iso': trip.date?.toIso8601String() ?? '',
+      'end_date_iso': trip.endDate?.toIso8601String() ?? '',
       'is_past': trip.isPast ? 1 : 0,
     };
+  }
+
+  void _openWallet() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    setState(() {
+      _index = 3;
+    });
   }
 
   TripEntry _mapToTrip(Map<String, dynamic> map) {
@@ -142,6 +150,9 @@ class _BottomNavState extends State<BottomNav> {
       assetPath: map['asset_path'] as String?,
       date: (map['date_iso'] as String?)?.isNotEmpty == true
           ? DateTime.tryParse(map['date_iso'] as String)
+          : null,
+      endDate: (map['end_date_iso'] as String?)?.isNotEmpty == true
+          ? DateTime.tryParse(map['end_date_iso'] as String)
           : null,
       isPast: (map['is_past'] ?? 0) == 1,
     );
@@ -246,10 +257,11 @@ class _BottomNavState extends State<BottomNav> {
     );
   }
 
-  void _bookLocation(EcoLocation location) {
+  void _bookLocation(EcoLocation location, DateTimeRange range) {
     final key = _tripKey(location.title, location.location);
     final exists = _trips.any((t) => _tripKey(t.title, t.location) == key);
     if (exists) return;
+    final isPast = range.end.isBefore(DateTime.now());
     setState(() {
       _trips.add(
         TripEntry(
@@ -259,21 +271,34 @@ class _BottomNavState extends State<BottomNav> {
           price: location.price,
           imageUrl: location.imageUrl,
           assetPath: null,
-          date: DateTime.now(),
-          isPast: false,
+          date: range.start,
+          endDate: range.end,
+          isPast: isPast,
         ),
       );
       _persistTrip(_trips.last, saved: false);
     });
   }
 
-  void _rebookTrip(TripEntry trip) {
+  void _rebookTrip(TripEntry trip, DateTimeRange range) {
     final key = _tripKey(trip.title, trip.location);
     final exists = _trips.any((t) => _tripKey(t.title, t.location) == key);
     if (exists) return;
+    final isPast = range.end.isBefore(DateTime.now());
     setState(() {
-      _trips.add(trip);
-      _persistTrip(trip, saved: false);
+      final updated = TripEntry(
+        title: trip.title,
+        subtitle: trip.subtitle,
+        location: trip.location,
+        price: trip.price,
+        imageUrl: trip.imageUrl,
+        assetPath: trip.assetPath,
+        date: range.start,
+        endDate: range.end,
+        isPast: isPast,
+      );
+      _trips.add(updated);
+      _persistTrip(updated, saved: false);
     });
   }
 
@@ -322,6 +347,7 @@ class _BottomNavState extends State<BottomNav> {
             _index = 2;
           });
         },
+        onViewWallet: _openWallet,
       ),
       StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
@@ -370,7 +396,7 @@ class _BottomNavState extends State<BottomNav> {
                     isSaved: isSaved,
                     isBooked: isBooked,
                     onToggleSave: () => _toggleSavedActivity(location),
-                    onBook: () => _rebookTrip(trip),
+                    onBook: (date) => _rebookTrip(trip, date),
                     onUnbook: () => _removeTripByKey(
                       title: trip.title,
                       location: trip.location,
@@ -381,6 +407,7 @@ class _BottomNavState extends State<BottomNav> {
                         _index = 2;
                       });
                     },
+                    onViewWallet: _openWallet,
                   ),
                 ),
               );

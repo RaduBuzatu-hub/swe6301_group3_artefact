@@ -97,7 +97,7 @@ class LocalDb {
     final dbPath = p.join(basePath, 'green_getaway.db');
     _db = await openDatabase(
       dbPath,
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE profiles (
@@ -123,6 +123,7 @@ class LocalDb {
             image_url TEXT,
             asset_path TEXT,
             date_iso TEXT,
+            end_date_iso TEXT,
             is_past INTEGER,
             UNIQUE(uid, title, location)
           );
@@ -138,6 +139,7 @@ class LocalDb {
             image_url TEXT,
             asset_path TEXT,
             date_iso TEXT,
+            end_date_iso TEXT,
             is_past INTEGER,
             UNIQUE(uid, title, location)
           );
@@ -163,6 +165,7 @@ class LocalDb {
               image_url TEXT,
               asset_path TEXT,
               date_iso TEXT,
+              end_date_iso TEXT,
               is_past INTEGER,
               UNIQUE(uid, title, location)
             );
@@ -178,10 +181,15 @@ class LocalDb {
               image_url TEXT,
               asset_path TEXT,
               date_iso TEXT,
+              end_date_iso TEXT,
               is_past INTEGER,
               UNIQUE(uid, title, location)
             );
           ''');
+        }
+        if (oldVersion >= 4 && oldVersion < 5) {
+          await db.execute('ALTER TABLE trips ADD COLUMN end_date_iso TEXT;');
+          await db.execute('ALTER TABLE saved_activities ADD COLUMN end_date_iso TEXT;');
         }
       },
     );

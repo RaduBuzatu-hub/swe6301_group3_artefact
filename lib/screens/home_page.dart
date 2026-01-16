@@ -463,7 +463,8 @@ class _HomePageState extends State<HomePage> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => EventDetailPage(
-                onJoin: () {
+                onJoin: (range) {
+                  final isPast = range.end.isBefore(DateTime.now());
                   widget.onJoinTrip?.call(
                     TripEntry(
                       title: 'Beach Clean-Up - Saturday',
@@ -471,8 +472,9 @@ class _HomePageState extends State<HomePage> {
                       location: 'Falmouth',
                       price: 'Free - 10:00-13:00',
                       assetPath: 'lib/screens/assets/beach_clean_up.png',
-                      date: DateTime(2025, 10, 20, 10, 0),
-                      isPast: false,
+                      date: range.start,
+                      endDate: range.end,
+                      isPast: isPast,
                     ),
                   );
                 },
@@ -540,7 +542,8 @@ class _HomePageState extends State<HomePage> {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => EventDetailPage(
-                              onJoin: () {
+                              onJoin: (range) {
+                                final isPast = range.end.isBefore(DateTime.now());
                                 widget.onJoinTrip?.call(
                                   TripEntry(
                                     title: 'Beach Clean-Up - Saturday',
@@ -548,8 +551,9 @@ class _HomePageState extends State<HomePage> {
                                     location: 'Falmouth',
                                     price: 'Free - 10:00-13:00',
                                     assetPath: 'lib/screens/assets/beach_clean_up.png',
-                                    date: DateTime(2025, 10, 20, 10, 0),
-                                    isPast: false,
+                                    date: range.start,
+                                    endDate: range.end,
+                                    isPast: isPast,
                                   ),
                                 );
                               },

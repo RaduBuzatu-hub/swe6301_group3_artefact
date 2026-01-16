@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/trip_entry.dart';
+import '../utils/available_dates.dart';
 
 /// Detail page for an activity; returns a [TripEntry] back to the caller when user taps "Join".
 class ActivityDetailPage extends StatelessWidget {
@@ -12,6 +13,34 @@ class ActivityDetailPage extends StatelessWidget {
     required this.tagPrimary,
     required this.tagSecondary,
   });
+
+  Future<void> _handleJoin(BuildContext context) async {
+    final availableDates = buildAvailableDates(
+      seed: '${entry.title}|${entry.location}',
+      count: 6,
+      rangeDays: 30,
+    );
+    final selectedRange = await showAvailableDateRangePicker(
+      context: context,
+      availableDates: availableDates,
+      helpText: 'Select available dates',
+    );
+    if (selectedRange == null || !context.mounted) return;
+    final isPast = selectedRange.end.isBefore(DateTime.now());
+    Navigator.of(context).pop(
+      TripEntry(
+        title: entry.title,
+        subtitle: entry.subtitle,
+        location: entry.location,
+        price: entry.price,
+        assetPath: entry.assetPath,
+        imageUrl: entry.imageUrl,
+        date: selectedRange.start,
+        endDate: selectedRange.end,
+        isPast: isPast,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,10 +136,7 @@ class ActivityDetailPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      onPressed: () {
-                        // Pop with the entry so parent can add to itinerary/saved list.
-                        Navigator.of(context).pop(entry);
-                      },
+                      onPressed: () => _handleJoin(context),
                       child: const Text(
                         'Join this activity',
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../utils/available_dates.dart';
 
 /// Detail page for a single event; invokes [onJoin] when user taps Join.
 class EventDetailPage extends StatelessWidget {
-  final VoidCallback? onJoin;
+  final ValueChanged<DateTimeRange>? onJoin;
   const EventDetailPage({super.key, this.onJoin});
 
   Widget _bullet(String text) {
@@ -21,6 +22,22 @@ class EventDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleJoin(BuildContext context) async {
+    final availableDates = buildAvailableDates(
+      seed: 'beach-clean-up-falmouth',
+      count: 6,
+      rangeDays: 30,
+    );
+    final selectedRange = await showAvailableDateRangePicker(
+      context: context,
+      availableDates: availableDates,
+      helpText: 'Select available dates',
+    );
+    if (selectedRange == null || !context.mounted) return;
+    onJoin?.call(selectedRange);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -154,10 +171,7 @@ class EventDetailPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      onPressed: () {
-                        onJoin?.call();
-                        Navigator.of(context).pop();
-                      },
+                      onPressed: () => _handleJoin(context),
                       child: const Text(
                         'Join this activity',
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),

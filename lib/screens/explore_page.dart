@@ -12,10 +12,11 @@ class ExplorePage extends StatefulWidget {
   final Set<String> savedKeys;
   final ValueChanged<EcoLocation> onToggleSave;
   final Set<String> bookedKeys;
-  final ValueChanged<EcoLocation> onBookStay;
+  final void Function(EcoLocation, DateTimeRange) onBookStay;
   final ValueChanged<EcoLocation> onUnbookStay;
   final ValueChanged<TripEntry>? onJoinTrip;
   final VoidCallback? onViewTrips;
+  final VoidCallback? onViewWallet;
   const ExplorePage({
     super.key,
     this.query,
@@ -26,6 +27,7 @@ class ExplorePage extends StatefulWidget {
     required this.onUnbookStay,
     this.onJoinTrip,
     this.onViewTrips,
+    this.onViewWallet,
   });
 
   @override
@@ -708,9 +710,11 @@ class _ExplorePageState extends State<ExplorePage> {
                                         .contains(_locationKey(filteredLocations.first)),
                                     onToggleSave: () =>
                                         widget.onToggleSave(filteredLocations.first),
-                                    onBook: () => widget.onBookStay(filteredLocations.first),
+                                    onBook: (date) =>
+                                        widget.onBookStay(filteredLocations.first, date),
                                     onUnbook: () => widget.onUnbookStay(filteredLocations.first),
                                     onViewTrips: widget.onViewTrips,
+                                    onViewWallet: widget.onViewWallet,
                                   ),
                                 ),
                               );
@@ -739,9 +743,10 @@ class _ExplorePageState extends State<ExplorePage> {
                                           onToggleSave: () => widget.onToggleSave(item),
                                           isBooked:
                                               widget.bookedKeys.contains(_locationKey(item)),
-                                          onBook: () => widget.onBookStay(item),
+                                          onBook: (date) => widget.onBookStay(item, date),
                                           onUnbook: () => widget.onUnbookStay(item),
                                           onViewTrips: widget.onViewTrips,
+                                          onViewWallet: widget.onViewWallet,
                                         ),
                                       ),
                                     );

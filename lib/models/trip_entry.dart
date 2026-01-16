@@ -8,6 +8,7 @@ class TripEntry {
   final String? assetPath;
   final String? imageUrl;
   final DateTime? date;
+  final DateTime? endDate;
   final bool isPast;
   const TripEntry({
     required this.title,
@@ -17,6 +18,7 @@ class TripEntry {
     this.assetPath,
     this.imageUrl,
     this.date,
+    this.endDate,
     this.isPast = false,
   });
 }

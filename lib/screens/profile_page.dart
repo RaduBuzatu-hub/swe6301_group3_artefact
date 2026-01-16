@@ -649,12 +649,11 @@ class _WalletCardState extends State<_WalletCard> {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         const SnackBar(content: Text('Unable to add funds right now.')),
       );
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _isUpdating = false;
-      });
     }
+    if (!mounted) return;
+    setState(() {
+      _isUpdating = false;
+    });
   }
 
   @override

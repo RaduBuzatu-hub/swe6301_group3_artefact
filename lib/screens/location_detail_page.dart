@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../data/eco_locations.dart';
+import '../utils/available_dates.dart';
 
 /// Location detail page used for both saved and booked contexts.
 class LocationDetailPage extends StatefulWidget {
@@ -7,9 +10,10 @@ class LocationDetailPage extends StatefulWidget {
   final bool isSaved;
   final bool isBooked;
   final VoidCallback onToggleSave;
-  final VoidCallback onBook;
+  final ValueChanged<DateTimeRange> onBook;
   final VoidCallback onUnbook;
   final VoidCallback? onViewTrips;
+  final VoidCallback? onViewWallet;
   const LocationDetailPage({
     super.key,
     required this.location,
@@ -19,6 +23,7 @@ class LocationDetailPage extends StatefulWidget {
     required this.onBook,
     required this.onUnbook,
     this.onViewTrips,
+    this.onViewWallet,
   });
 
   @override
@@ -28,12 +33,19 @@ class LocationDetailPage extends StatefulWidget {
 class _LocationDetailPageState extends State<LocationDetailPage> {
   late bool _saved;
   late bool _booked;
+  late List<DateTime> _availableDates;
+  static const int _nightlyRate = 150;
 
   @override
   void initState() {
     super.initState();
     _saved = widget.isSaved;
     _booked = widget.isBooked;
+    _availableDates = buildAvailableDates(
+      seed: '${widget.location.title}|${widget.location.location}',
+      count: 8,
+      rangeDays: 60,
+    );
   }
 
   void _handleToggleSave() {
@@ -43,7 +55,104 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     });
   }
 
-  void _handleBook() {
+  Future<int> _fetchWalletBalance() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return 0;
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('wallets').doc(uid).get();
+      final data = doc.data();
+      return (data?['balance'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<bool> _chargeWallet(int amount) async {
+    if (amount <= 0) return true;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+    final walletRef = FirebaseFirestore.instance.collection('wallets').doc(uid);
+    try {
+      return await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(walletRef);
+        final data = snapshot.data();
+        final current = (data?['balance'] as num?)?.toInt() ?? 0;
+        if (current < amount) {
+          return false;
+        }
+        transaction.set(
+          walletRef,
+          {
+            'balance': current - amount,
+            'updated_at': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+        return true;
+      });
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _confirmCost({
+    required int nights,
+    required int total,
+    required int balance,
+  }) async {
+    final hasFunds = balance >= total;
+    final theme = Theme.of(context).colorScheme;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: theme.primaryContainer,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Text(hasFunds ? 'Confirm booking' : 'Insufficient funds'),
+          content: Text(
+            '£$_nightlyRate per night × $nights '
+            '${nights == 1 ? 'night' : 'nights'} = £$total\n'
+            'Wallet balance: £$balance',
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.onPrimaryContainer.withValues(alpha: 0.9),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            if (hasFunds)
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.primary,
+                  foregroundColor: theme.onPrimary,
+                ),
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text('Book for £$total'),
+              )
+            else
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.primary,
+                  foregroundColor: theme.onPrimary,
+                ),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(false);
+                  widget.onViewWallet?.call();
+                },
+                child: const Text('Add funds'),
+              ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<void> _handleBook() async {
     if (_booked) {
       widget.onUnbook();
       setState(() {
@@ -51,8 +160,43 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
       });
       return;
     }
+    final selectedRange = await showPricedDateRangePicker(
+      context: context,
+      availableDates: _availableDates,
+      nightlyRate: _nightlyRate,
+      currencyLabel: '£',
+      helpText: 'Select available dates',
+    );
+    if (selectedRange == null || !mounted) return;
+    final nights = calculateNights(selectedRange.start, selectedRange.end);
+    final total = nights * _nightlyRate;
+    final balance = await _fetchWalletBalance();
+    if (!mounted) return;
+    final canBook = await _confirmCost(
+      nights: nights,
+      total: total,
+      balance: balance,
+    );
+    if (!canBook || !mounted) return;
+    final charged = await _chargeWallet(total);
+    if (!mounted) return;
+    if (!charged) {
+      final updatedBalance = await _fetchWalletBalance();
+      if (!mounted) return;
+      if (updatedBalance < total) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(content: Text('Insufficient funds. Please add to your wallet.')),
+        );
+        widget.onViewWallet?.call();
+      } else {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(content: Text('Unable to charge the wallet right now.')),
+        );
+      }
+      return;
+    }
     final wasSaved = _saved;
-    widget.onBook();
+    widget.onBook(selectedRange);
     setState(() {
       _booked = true;
       _saved = true;

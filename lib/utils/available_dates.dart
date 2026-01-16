@@ -1,0 +1,304 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
+
+int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
+
+DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+int calculateNights(DateTime start, DateTime end) {
+  final nights = dateOnly(end).difference(dateOnly(start)).inDays;
+  return nights <= 0 ? 1 : nights;
+}
+
+List<DateTime> buildAvailableDates({
+  required String seed,
+  int count = 8,
+  int rangeDays = 45,
+}) {
+  final start = dateOnly(DateTime.now()).add(const Duration(days: 1));
+  final adjustedRange = max(rangeDays, count + 1);
+  final random = Random(seed.hashCode);
+  final offsets = <int>{};
+  var attempts = 0;
+  while (offsets.length < count && attempts < count * 10) {
+    final blockStart = random.nextInt(max(2, adjustedRange - 3));
+    final blockLength = 2 + random.nextInt(3); // 2-4 day stretches
+    for (var i = 0; i < blockLength; i++) {
+      offsets.add(blockStart + i);
+    }
+    attempts++;
+  }
+  final trimmedOffsets = offsets.take(count);
+  final dates = trimmedOffsets
+      .map((offset) => dateOnly(start.add(Duration(days: offset))))
+      .toList()
+    ..sort((a, b) => a.compareTo(b));
+  return dates;
+}
+
+Future<DateTime?> showAvailableDatePicker({
+  required BuildContext context,
+  required List<DateTime> availableDates,
+  String helpText = 'Select an available date',
+}) {
+  if (availableDates.isEmpty) {
+    return Future.value(null);
+  }
+  final normalized = availableDates.map(dateOnly).toList()
+    ..sort((a, b) => a.compareTo(b));
+  final allowedDays = normalized.map(_dayKey).toSet();
+  final firstDate = normalized.first;
+  final lastDate = normalized.last;
+  return showDatePicker(
+    context: context,
+    initialDate: firstDate,
+    firstDate: firstDate,
+    lastDate: lastDate,
+    helpText: helpText,
+    selectableDayPredicate: (day) => allowedDays.contains(_dayKey(day)),
+  );
+}
+
+bool isRangeAvailable(DateTimeRange range, Set<int> allowedDays) {
+  var cursor = dateOnly(range.start);
+  final end = dateOnly(range.end);
+  while (!cursor.isAfter(end)) {
+    if (!allowedDays.contains(_dayKey(cursor))) {
+      return false;
+    }
+    cursor = cursor.add(const Duration(days: 1));
+  }
+  return true;
+}
+
+Future<DateTimeRange?> showAvailableDateRangePicker({
+  required BuildContext context,
+  required List<DateTime> availableDates,
+  String helpText = 'Select available dates',
+}) async {
+  if (availableDates.isEmpty) {
+    return null;
+  }
+  final normalized = availableDates.map(dateOnly).toList()
+    ..sort((a, b) => a.compareTo(b));
+  final allowedDays = normalized.map(_dayKey).toSet();
+  final firstDate = normalized.first;
+  final lastDate = normalized.last;
+  final selection = await showDateRangePicker(
+    context: context,
+    firstDate: firstDate,
+    lastDate: lastDate,
+    helpText: helpText,
+    selectableDayPredicate: (day, start, end) => allowedDays.contains(_dayKey(day)),
+  );
+  if (selection == null) return null;
+  if (!context.mounted) return null;
+  if (!isRangeAvailable(selection, allowedDays)) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      const SnackBar(content: Text('Selected range includes unavailable dates.')),
+    );
+    return null;
+  }
+  return selection;
+}
+
+Future<DateTimeRange?> showPricedDateRangePicker({
+  required BuildContext context,
+  required List<DateTime> availableDates,
+  required int nightlyRate,
+  String currencyLabel = 'GBP',
+  String helpText = 'Select available dates',
+}) async {
+  if (availableDates.isEmpty) {
+    return null;
+  }
+  final normalized = availableDates.map(dateOnly).toList()
+    ..sort((a, b) => a.compareTo(b));
+  final allowedDays = normalized.map(_dayKey).toSet();
+  final firstDate = normalized.first;
+  final lastDate = normalized.last;
+  DateTime? startDate;
+  DateTime? endDate;
+  DateTime focusedDay = firstDate;
+  String? errorText;
+
+  return showDialog<DateTimeRange>(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          final theme = Theme.of(context);
+          int? nights;
+          int? total;
+          if (startDate != null) {
+            final effectiveEnd = endDate ?? startDate!;
+            nights = calculateNights(startDate!, effectiveEnd);
+            total = nights * nightlyRate;
+          }
+          return AlertDialog(
+            backgroundColor: theme.colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: Text(helpText),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _DateLabel(label: 'Start', date: startDate),
+                    _DateLabel(label: 'End', date: endDate ?? startDate),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (nights != null && total != null)
+                  Text(
+                    '$nights ${nights == 1 ? 'night' : 'nights'} - '
+                    '$currencyLabel$total',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  )
+                else
+                  const Text('Select a start date'),
+                const SizedBox(height: 4),
+                const Text(
+                  'Tap a start date, then an end date.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                if (errorText != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    errorText!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 360,
+                  width: 320,
+                  child: TableCalendar(
+                    firstDay: firstDate,
+                    lastDay: lastDate,
+                    focusedDay: focusedDay,
+                    rangeStartDay: startDate,
+                    rangeEndDay: endDate,
+                    rangeSelectionMode: RangeSelectionMode.toggledOn,
+                    availableGestures: AvailableGestures.horizontalSwipe,
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                    ),
+                    calendarStyle: CalendarStyle(
+                      rangeHighlightColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.14),
+                      withinRangeDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.14),
+                        shape: BoxShape.circle,
+                      ),
+                      rangeStartDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      rangeEndDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      rangeStartTextStyle: TextStyle(
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                      rangeEndTextStyle: TextStyle(
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                      withinRangeTextStyle: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      todayDecoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.colorScheme.primary,
+                          width: 1.2,
+                        ),
+                      ),
+                    ),
+                    enabledDayPredicate: (day) => allowedDays.contains(_dayKey(day)),
+                    onRangeSelected: (start, end, focused) {
+                      setState(() {
+                        focusedDay = focused;
+                        startDate = start == null ? null : dateOnly(start);
+                        endDate = end == null ? null : dateOnly(end);
+                        if (startDate != null && endDate != null) {
+                          final range = DateTimeRange(start: startDate!, end: endDate!);
+                          if (!isRangeAvailable(range, allowedDays)) {
+                            errorText = 'Selected range includes unavailable dates.';
+                          } else {
+                            errorText = null;
+                          }
+                        } else {
+                          errorText = null;
+                        }
+                      });
+                    },
+                    onPageChanged: (focused) {
+                      setState(() {
+                        focusedDay = focused;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: (startDate == null ||
+                        (endDate != null &&
+                            !isRangeAvailable(
+                              DateTimeRange(start: startDate!, end: endDate!),
+                              allowedDays,
+                            )))
+                    ? null
+                    : () {
+                        final start = startDate!;
+                        final end = endDate ?? startDate!;
+                        Navigator.of(dialogContext).pop(DateTimeRange(start: start, end: end));
+                      },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+class _DateLabel extends StatelessWidget {
+  final String label;
+  final DateTime? date;
+  const _DateLabel({required this.label, required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = date == null ? '--' : '${date!.day}/${date!.month}/${date!.year}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          text,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ],
+    );
+  }
+}
