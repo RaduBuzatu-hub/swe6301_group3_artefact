@@ -13,6 +13,7 @@ class ExplorePage extends StatefulWidget {
   final ValueChanged<EcoLocation> onToggleSave;
   final Set<String> bookedKeys;
   final ValueChanged<EcoLocation> onBookStay;
+  final ValueChanged<EcoLocation> onUnbookStay;
   final ValueChanged<TripEntry>? onJoinTrip;
   final VoidCallback? onViewTrips;
   const ExplorePage({
@@ -22,6 +23,7 @@ class ExplorePage extends StatefulWidget {
     required this.onToggleSave,
     required this.bookedKeys,
     required this.onBookStay,
+    required this.onUnbookStay,
     this.onJoinTrip,
     this.onViewTrips,
   });
@@ -707,6 +709,7 @@ class _ExplorePageState extends State<ExplorePage> {
                                     onToggleSave: () =>
                                         widget.onToggleSave(filteredLocations.first),
                                     onBook: () => widget.onBookStay(filteredLocations.first),
+                                    onUnbook: () => widget.onUnbookStay(filteredLocations.first),
                                     onViewTrips: widget.onViewTrips,
                                   ),
                                 ),
@@ -737,6 +740,7 @@ class _ExplorePageState extends State<ExplorePage> {
                                           isBooked:
                                               widget.bookedKeys.contains(_locationKey(item)),
                                           onBook: () => widget.onBookStay(item),
+                                          onUnbook: () => widget.onUnbookStay(item),
                                           onViewTrips: widget.onViewTrips,
                                         ),
                                       ),

@@ -158,6 +158,15 @@ class _BottomNavState extends State<BottomNav> {
     );
   }
 
+  Future<void> _persistTripRemoval({
+    required String title,
+    required String location,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await LocalDb.instance.deleteTrip(uid: uid, title: title, location: location);
+  }
+
   Future<void> _persistSavedAddition(EcoLocation location) async {
     final uid = _uid;
     if (uid == null) return;
@@ -258,6 +267,31 @@ class _BottomNavState extends State<BottomNav> {
     });
   }
 
+  void _rebookTrip(TripEntry trip) {
+    final key = _tripKey(trip.title, trip.location);
+    final exists = _trips.any((t) => _tripKey(t.title, t.location) == key);
+    if (exists) return;
+    setState(() {
+      _trips.add(trip);
+      _persistTrip(trip, saved: false);
+    });
+  }
+
+  void _removeTripByKey({required String title, required String location}) {
+    final key = _tripKey(title, location);
+    final existingIndex = _trips.indexWhere((t) => _tripKey(t.title, t.location) == key);
+    if (existingIndex < 0) return;
+    final removed = _trips[existingIndex];
+    setState(() {
+      _trips.removeAt(existingIndex);
+    });
+    _persistTripRemoval(title: removed.title, location: removed.location);
+  }
+
+  void _unbookLocation(EcoLocation location) {
+    _removeTripByKey(title: location.title, location: location.location);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
@@ -280,6 +314,7 @@ class _BottomNavState extends State<BottomNav> {
         onToggleSave: _toggleSavedActivity,
         bookedKeys: _trips.map((e) => _tripKey(e.title, e.location)).toSet(),
         onBookStay: _bookLocation,
+        onUnbookStay: _unbookLocation,
         onJoinTrip: _handleJoinTrip,
         onViewTrips: () {
           Navigator.of(context).pop();
@@ -315,6 +350,7 @@ class _BottomNavState extends State<BottomNav> {
             trips: _trips,
             savedActivities: _savedActivities,
             onOpenTrip: (trip) {
+              final key = _tripKey(trip.title, trip.location);
               final location = EcoLocation(
                 title: trip.title,
                 location: trip.location,
@@ -323,14 +359,22 @@ class _BottomNavState extends State<BottomNav> {
                 imageUrl: trip.imageUrl ?? '',
                 tags: const [],
               );
+              final isBooked =
+                  _trips.any((t) => _tripKey(t.title, t.location) == key);
+              final isSaved =
+                  _savedActivities.any((t) => _tripKey(t.title, t.location) == key);
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => LocationDetailPage(
                     location: location,
-                    isSaved: true,
-                    isBooked: true,
-                    onToggleSave: () {},
-                    onBook: () {},
+                    isSaved: isSaved,
+                    isBooked: isBooked,
+                    onToggleSave: () => _toggleSavedActivity(location),
+                    onBook: () => _rebookTrip(trip),
+                    onUnbook: () => _removeTripByKey(
+                      title: trip.title,
+                      location: trip.location,
+                    ),
                     onViewTrips: () {
                       Navigator.of(context).pop();
                       setState(() {

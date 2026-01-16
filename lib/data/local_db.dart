@@ -242,6 +242,21 @@ class LocalDb {
     );
   }
 
+  Future<void> deleteTrip({
+    required String uid,
+    required String title,
+    required String location,
+  }) async {
+    // Remove a booked trip for a specific user and location.
+    final db = _db;
+    if (db == null) return;
+    await db.delete(
+      'trips',
+      where: 'uid = ? AND title = ? AND location = ?',
+      whereArgs: [uid, title, location],
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getTrips({
     required String uid,
     required bool saved,

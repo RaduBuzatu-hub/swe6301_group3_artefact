@@ -8,6 +8,7 @@ class LocationDetailPage extends StatefulWidget {
   final bool isBooked;
   final VoidCallback onToggleSave;
   final VoidCallback onBook;
+  final VoidCallback onUnbook;
   final VoidCallback? onViewTrips;
   const LocationDetailPage({
     super.key,
@@ -16,6 +17,7 @@ class LocationDetailPage extends StatefulWidget {
     required this.isBooked,
     required this.onToggleSave,
     required this.onBook,
+    required this.onUnbook,
     this.onViewTrips,
   });
 
@@ -42,7 +44,13 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
   }
 
   void _handleBook() {
-    if (_booked) return;
+    if (_booked) {
+      widget.onUnbook();
+      setState(() {
+        _booked = false;
+      });
+      return;
+    }
     final wasSaved = _saved;
     widget.onBook();
     setState(() {
@@ -137,7 +145,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ElevatedButton.icon(
-                        icon: Icon(_booked ? Icons.check_circle : Icons.favorite_border),
+                        icon: Icon(_booked ? Icons.cancel : Icons.favorite_border),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4A148C),
                           foregroundColor: Colors.white,
@@ -148,7 +156,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                         ),
                         onPressed: _handleBook,
                         label: Text(
-                          _booked ? 'Booked' : 'Book this stay',
+                          _booked ? 'Cancel booking' : 'Book this stay',
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                         ),
                       ),
