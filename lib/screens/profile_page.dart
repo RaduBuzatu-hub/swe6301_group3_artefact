@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/local_db.dart';
 
@@ -399,6 +400,8 @@ class _SignedInContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        _WalletCard(uid: profile.uid),
+        const SizedBox(height: 16),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -502,6 +505,239 @@ class _SignedInContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+}
+
+class _WalletCard extends StatefulWidget {
+  final String uid;
+  const _WalletCard({required this.uid});
+
+  @override
+  State<_WalletCard> createState() => _WalletCardState();
+}
+
+class _WalletCardState extends State<_WalletCard> {
+  bool _isUpdating = false;
+
+  DocumentReference<Map<String, dynamic>> get _walletRef {
+    return FirebaseFirestore.instance.collection('wallets').doc(widget.uid);
+  }
+
+  Future<void> _addCredits(int amount) async {
+    await _walletRef.set(
+      {
+        'balance': FieldValue.increment(amount),
+        'updated_at': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<void> _promptAddCredits() async {
+    final theme = Theme.of(context).colorScheme;
+    const quickAmounts = [10, 25, 50, 100, 250, 500, 1000, 1500, 2000, 5000];
+    int selectedAmount = quickAmounts[2];
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: theme.primaryContainer,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              title: const Text('Add £'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final value in quickAmounts)
+                        ChoiceChip(
+                          label: Text('£$value'),
+                          selected: selectedAmount == value,
+                          onSelected: (_) {
+                            setState(() {
+                              selectedAmount = value;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: selectedAmount > 1
+                            ? () {
+                                setState(() {
+                                  selectedAmount -= 1;
+                                });
+                              }
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '£$selectedAmount',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedAmount += 1;
+                          });
+                        },
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap chips for quick adds',
+                    style: TextStyle(
+                      color: theme.onPrimaryContainer.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.onPrimaryContainer.withValues(alpha: 0.9),
+                  ),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.primary,
+                    foregroundColor: theme.onPrimary,
+                  ),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(selectedAmount);
+                  },
+                  child: Text('Add £$selectedAmount'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (amount == null) return;
+    if (!mounted) return;
+    setState(() {
+      _isUpdating = true;
+    });
+    try {
+      await _addCredits(amount).timeout(const Duration(seconds: 8));
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text('Added £$amount')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('Unable to add funds right now.')),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isUpdating = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context).colorScheme;
+    final walletRef = _walletRef;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: walletRef.snapshots(),
+        builder: (context, snapshot) {
+          final data = snapshot.data?.data();
+          final balance = (data?['balance'] as num?)?.toInt() ?? 0;
+          return Row(
+            children: [
+              const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: Color(0xFFF7E7C5),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Wallet',
+                      style: TextStyle(
+                        color: Color(0xFFF7E7C5),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '£$balance',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: theme.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _isUpdating ? null : _promptAddCredits,
+                icon: _isUpdating
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.primary,
+                        ),
+                      )
+                    : const Icon(Icons.add, size: 18),
+                label: Text(
+                  _isUpdating ? 'Adding...' : 'Add',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
