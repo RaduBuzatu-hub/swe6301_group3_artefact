@@ -33,6 +33,10 @@ class ExplorePage extends StatefulWidget {
 class _ExplorePageState extends State<ExplorePage> {
   late String _currentQuery;
   final Set<String> _activeFilters = {};
+  _CategoryFilter _categoryFilter = _CategoryFilter.all;
+  String _selectedLocation = 'Anywhere';
+  String _selectedEcoTag = 'Any tag';
+  _SortOption _sortOption = _SortOption.ratingDesc;
 
   static const List<_FilterOption> _filterOptions = [
     _FilterOption(id: 'low_co2', label: 'Low CO₂ only'),
@@ -48,20 +52,104 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   void initState() {
     super.initState();
-    _currentQuery = (widget.query ?? '').isEmpty ? 'Explore' : widget.query!;
+    final incoming = (widget.query ?? '').trim();
+    if (!_applyCategoryPreset(incoming)) {
+      _currentQuery = incoming.isEmpty ? 'Explore' : incoming;
+    }
   }
 
   @override
   void didUpdateWidget(covariant ExplorePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final incoming = (widget.query ?? '').isEmpty ? 'Explore' : widget.query!;
-    if (incoming != _currentQuery) {
-      _currentQuery = incoming;
+    final incoming = (widget.query ?? '').trim();
+    final previous = (oldWidget.query ?? '').trim();
+    if (incoming != previous) {
+      if (!_applyCategoryPreset(incoming)) {
+        _currentQuery = incoming.isEmpty ? 'Explore' : incoming;
+      }
     }
   }
 
   String _locationKey(EcoLocation item) =>
       '${item.title.toLowerCase()}|${item.location.toLowerCase()}';
+
+  List<String> get _locationOptions {
+    final options = <String>{};
+    for (final location in kEcoLocations) {
+      options.add(location.location);
+    }
+    for (final activity in kActivities) {
+      options.add(activity.location);
+    }
+    final list = options.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return ['Anywhere', ...list];
+  }
+
+  List<String> get _ecoTagOptions {
+    final options = <String>{};
+    for (final location in kEcoLocations) {
+      options.addAll(location.tags);
+    }
+    for (final activity in kActivities) {
+      options.addAll(activity.tags);
+    }
+    final list = options.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return ['Any tag', ...list];
+  }
+
+  bool _matchesLocation(String location) {
+    if (_selectedLocation == 'Anywhere') return true;
+    final selected = _selectedLocation.toLowerCase();
+    final loc = location.toLowerCase();
+    return loc.contains(selected) || selected.contains(loc);
+  }
+
+  bool _matchesEcoTag({
+    required List<String> tags,
+    required String meta,
+    required String title,
+  }) {
+    if (_selectedEcoTag == 'Any tag') return true;
+    final selected = _selectedEcoTag.toLowerCase();
+    return tags.any((tag) => tag.toLowerCase().contains(selected)) ||
+        meta.toLowerCase().contains(selected) ||
+        title.toLowerCase().contains(selected);
+  }
+
+  void _resetFilters() {
+    _currentQuery = 'Explore';
+    _activeFilters.clear();
+    _categoryFilter = _CategoryFilter.all;
+    _selectedLocation = 'Anywhere';
+    _selectedEcoTag = 'Any tag';
+    _sortOption = _SortOption.ratingDesc;
+  }
+
+  bool _applyCategoryPreset(String? query) {
+    final normalized = (query ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    switch (normalized) {
+      case 'eco stays':
+        _resetFilters();
+        _categoryFilter = _CategoryFilter.stays;
+        return true;
+      case 'activities':
+        _resetFilters();
+        _categoryFilter = _CategoryFilter.activities;
+        return true;
+      case 'nature':
+        _resetFilters();
+        _activeFilters.add('nature');
+        return true;
+      case 'local tours':
+        _resetFilters();
+        _currentQuery = 'local';
+        return true;
+    }
+    return false;
+  }
 
   int? _extractPriceValue(String price) {
     final match = RegExp(r'(\\d+)').firstMatch(price.replaceAll(',', ''));
@@ -193,14 +281,15 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 
   List<EcoLocation> _filterResults() {
+    if (_categoryFilter == _CategoryFilter.activities) return [];
     final q = _currentQuery.toLowerCase().trim();
     final baseList = kEcoLocations;
-    if (q.isEmpty || q == 'explore') return baseList;
-    if (q.contains('activit')) return baseList;
+    final isDefaultQuery = q.isEmpty || q == 'explore' || q.contains('activit');
 
     final tokens = q.split(RegExp(r'[^a-z0-9]+')).where((t) => t.isNotEmpty).toList();
 
     bool matches(EcoLocation item) {
+      if (isDefaultQuery) return true;
       final title = item.title.toLowerCase();
       final loc = item.location.toLowerCase();
       final tags = item.tags.map((t) => t.toLowerCase());
@@ -221,19 +310,30 @@ class _ExplorePageState extends State<ExplorePage> {
     }
 
     final base = baseList.where(matches).toList();
-
-    return base.where(_passesLocationFilters).toList();
+    final filtered = base
+        .where(_passesLocationFilters)
+        .where((item) => _matchesLocation(item.location))
+        .where(
+          (item) => _matchesEcoTag(
+            tags: item.tags,
+            meta: item.meta,
+            title: item.title,
+          ),
+        )
+        .toList();
+    return _sortLocations(filtered);
   }
 
   List<ActivityItem> _filterActivities() {
+    if (_categoryFilter == _CategoryFilter.stays) return [];
     final q = _currentQuery.toLowerCase().trim();
     final all = kActivities;
-    if (q.isEmpty || q == 'explore') return all;
-    if (q.contains('activit')) return all;
+    final isDefaultQuery = q.isEmpty || q == 'explore' || q.contains('activit');
 
     final tokens = q.split(RegExp(r'[^a-z0-9]+')).where((t) => t.isNotEmpty).toList();
 
     bool matches(ActivityItem item) {
+      if (isDefaultQuery) return true;
       final title = item.title.toLowerCase();
       final loc = item.location.toLowerCase();
       final tags = item.tags.map((t) => t.toLowerCase());
@@ -260,7 +360,44 @@ class _ExplorePageState extends State<ExplorePage> {
     }
 
     final base = all.where(matches).toList();
-    return base.where(_passesActivityFilters).toList();
+    final filtered = base
+        .where(_passesActivityFilters)
+        .where((item) => _matchesLocation(item.location))
+        .where(
+          (item) => _matchesEcoTag(
+            tags: item.tags,
+            meta: item.meta,
+            title: item.title,
+          ),
+        )
+        .toList();
+    return _sortActivities(filtered);
+  }
+
+  List<EcoLocation> _sortLocations(List<EcoLocation> items) {
+    final list = [...items];
+    switch (_sortOption) {
+      case _SortOption.ratingDesc:
+        list.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case _SortOption.nameAsc:
+        list.sort((a, b) => a.title.compareTo(b.title));
+        break;
+    }
+    return list;
+  }
+
+  List<ActivityItem> _sortActivities(List<ActivityItem> items) {
+    final list = [...items];
+    switch (_sortOption) {
+      case _SortOption.ratingDesc:
+        list.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case _SortOption.nameAsc:
+        list.sort((a, b) => a.title.compareTo(b.title));
+        break;
+    }
+    return list;
   }
 
   bool _passesLocationFilters(EcoLocation item) {
@@ -440,8 +577,7 @@ class _ExplorePageState extends State<ExplorePage> {
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
-                                      _currentQuery = 'Explore';
-                                      _activeFilters.clear();
+                                      _resetFilters();
                                     });
                                   },
                                   child: const Text(
@@ -454,6 +590,59 @@ class _ExplorePageState extends State<ExplorePage> {
                                 ),
                             ],
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _FilterMenu(
+                              label: 'Category',
+                              value: _categoryFilter.label,
+                              items: _CategoryFilter.values.map((e) => e.label).toList(),
+                              onSelected: (value) {
+                                setState(() {
+                                  _categoryFilter = _CategoryFilter.values
+                                      .firstWhere((e) => e.label == value);
+                                });
+                              },
+                            ),
+                            _FilterMenu(
+                              label: 'Location',
+                              value: _selectedLocation,
+                              items: _locationOptions,
+                              onSelected: (value) {
+                                setState(() {
+                                  _selectedLocation = value;
+                                });
+                              },
+                            ),
+                            _FilterMenu(
+                              label: 'Eco tag',
+                              value: _selectedEcoTag,
+                              items: _ecoTagOptions,
+                              onSelected: (value) {
+                                setState(() {
+                                  _selectedEcoTag = value;
+                                });
+                              },
+                            ),
+                            _SortMenu(
+                              value: _sortOption,
+                              onSelected: (value) {
+                                setState(() {
+                                  _sortOption = value;
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -488,6 +677,15 @@ class _ExplorePageState extends State<ExplorePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if (totalResults == 0)
+                        _EmptyResults(
+                          onClear: () {
+                            setState(() {
+                              _resetFilters();
+                            });
+                          },
+                        ),
+                      if (totalResults == 0) const SizedBox(height: 16),
                       if (filteredLocations.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -670,6 +868,192 @@ class _FilterOption {
   final String id;
   final String label;
   const _FilterOption({required this.id, required this.label});
+}
+
+enum _CategoryFilter { all, stays, activities }
+
+extension _CategoryFilterLabel on _CategoryFilter {
+  String get label {
+    switch (this) {
+      case _CategoryFilter.all:
+        return 'All';
+      case _CategoryFilter.stays:
+        return 'Stays';
+      case _CategoryFilter.activities:
+        return 'Activities';
+    }
+  }
+}
+
+enum _SortOption { ratingDesc, nameAsc }
+
+extension _SortOptionLabel on _SortOption {
+  String get label {
+    switch (this) {
+      case _SortOption.ratingDesc:
+        return 'Rating';
+      case _SortOption.nameAsc:
+        return 'Name A-Z';
+    }
+  }
+}
+
+class _FilterMenu extends StatelessWidget {
+  final String label;
+  final String value;
+  final List<String> items;
+  final ValueChanged<String> onSelected;
+  const _FilterMenu({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: onSelected,
+      itemBuilder: (context) {
+        return items
+            .map(
+              (item) => PopupMenuItem<String>(
+                value: item,
+                child: Text(item),
+              ),
+            )
+            .toList();
+      },
+      child: _FilterPill(
+        label: label,
+        value: value,
+      ),
+    );
+  }
+}
+
+class _SortMenu extends StatelessWidget {
+  final _SortOption value;
+  final ValueChanged<_SortOption> onSelected;
+  const _SortMenu({
+    required this.value,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_SortOption>(
+      onSelected: onSelected,
+      itemBuilder: (context) {
+        return _SortOption.values
+            .map(
+              (option) => PopupMenuItem<_SortOption>(
+                value: option,
+                child: Text(option.label),
+              ),
+            )
+            .toList();
+      },
+      child: _FilterPill(
+        label: 'Sort',
+        value: value.label,
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  final String label;
+  final String value;
+  const _FilterPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 6),
+          const Icon(Icons.expand_more, color: Colors.white70, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyResults extends StatelessWidget {
+  final VoidCallback onClear;
+  const _EmptyResults({required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'No results found',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Try a different category, location, or eco tag.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: onClear,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: Colors.white.withValues(alpha: 0.18),
+            ),
+            child: const Text(
+              'Clear filters',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ResultCard extends StatelessWidget {

@@ -8,6 +8,7 @@ class EcoLocation {
   final String price;
   final String imageUrl;
   final List<String> tags;
+  final double rating;
 
   const EcoLocation({
     required this.title,
@@ -16,6 +17,7 @@ class EcoLocation {
     required this.price,
     required this.imageUrl,
     this.tags = const [],
+    this.rating = 0,
   });
 }
 
@@ -28,6 +30,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&w=1200&q=80',
     tags: ['london', 'train', 'uk'],
+    rating: 4.7,
   ),
   EcoLocation(
     title: 'Camden Green Hostel',
@@ -37,6 +40,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1433838552652-f9a46b332c40?auto=format&w=1200&q=80',
     tags: ['london', 'budget', 'hostel', 'uk'],
+    rating: 4.2,
   ),
   EcoLocation(
     title: 'Cornwall Clifftop Cabin',
@@ -46,6 +50,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&w=1200&q=80',
     tags: ['cornwall', 'sea', 'uk'],
+    rating: 4.8,
   ),
   EcoLocation(
     title: 'Cornwall Eco Farmstay',
@@ -55,6 +60,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&w=1200&q=80',
     tags: ['cornwall', 'farm', 'uk'],
+    rating: 4.4,
   ),
   EcoLocation(
     title: 'Lake District Lodge',
@@ -64,6 +70,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&w=1200&q=80',
     tags: ['lake', 'uk', 'lodge'],
+    rating: 4.6,
   ),
   EcoLocation(
     title: 'Seaside Escape',
@@ -73,6 +80,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&w=1200&q=80',
     tags: ['cornwall', 'sea', 'escape'],
+    rating: 4.5,
   ),
   EcoLocation(
     title: 'Mountain Retreat',
@@ -82,6 +90,7 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&w=1200&q=80',
     tags: ['alps', 'mountain', 'switzerland'],
+    rating: 4.9,
   ),
   EcoLocation(
     title: 'Island Hideaway',
@@ -91,5 +100,6 @@ const List<EcoLocation> kEcoLocations = [
     imageUrl:
         'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&w=1200&q=80',
     tags: ['bali', 'island', 'asia'],
+    rating: 4.3,
   ),
 ];

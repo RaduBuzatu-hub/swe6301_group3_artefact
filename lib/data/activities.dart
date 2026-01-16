@@ -9,6 +9,7 @@ class ActivityItem {
   final String? assetPath;
   final String? imageUrl;
   final List<String> tags;
+  final double rating;
 
   const ActivityItem({
     required this.title,
@@ -18,6 +19,7 @@ class ActivityItem {
     this.assetPath,
     this.imageUrl,
     this.tags = const [],
+    this.rating = 0,
   });
 }
 
@@ -29,6 +31,7 @@ const List<ActivityItem> kActivities = [
     price: 'Free',
     assetPath: 'lib/screens/assets/beach_clean_up.png',
     tags: ['beach', 'cornwall', 'outdoor', 'clean-up'],
+    rating: 4.5,
   ),
   ActivityItem(
     title: 'Forest Replanting',
@@ -37,6 +40,7 @@ const List<ActivityItem> kActivities = [
     price: 'Free',
     assetPath: 'lib/screens/assets/forest_replanting.png',
     tags: ['forest', 'outdoor', 'tree planting'],
+    rating: 4.6,
   ),
   ActivityItem(
     title: 'Eco Cooking Workshop (Lisbon)',
@@ -45,6 +49,7 @@ const List<ActivityItem> kActivities = [
     price: 'EUR 10',
     assetPath: 'lib/screens/assets/island_hideaway.jpeg',
     tags: ['workshop', 'food', 'lisbon'],
+    rating: 4.2,
   ),
   ActivityItem(
     title: 'Eco Cooking Workshop (Online)',
@@ -53,5 +58,6 @@ const List<ActivityItem> kActivities = [
     price: 'Free',
     assetPath: 'lib/screens/assets/beach_clean_up.png',
     tags: ['workshop', 'online', 'virtual'],
+    rating: 4.1,
   ),
 ];

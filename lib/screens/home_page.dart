@@ -4,6 +4,7 @@ import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/section_title.dart';
+import '../widgets/categories.dart';
 import 'search_page.dart';
 import 'event_detail_page.dart';
 import 'activity_detail_page.dart';
@@ -62,6 +63,7 @@ class _ActivityCardData {
 class _HomePageState extends State<HomePage> {
   final PageController _featuredController = PageController(viewportFraction: 0.9);
   String _activityFilter = 'All';
+  String? _selectedCategory;
   // Filters used to drive ChoiceChips; also double as locator labels.
   static const List<String> _filters = ['All', 'Outdoor', 'Workshop', 'Online'];
 
@@ -302,6 +304,8 @@ class _HomePageState extends State<HomePage> {
                           const SizedBox(height: 12),
                           _buildSearchBar(context),
                           const SizedBox(height: 18),
+                          _buildCategoriesSection(),
+                          const SizedBox(height: 18),
                           _buildFeaturedCarousel(),
                           const SizedBox(height: 24),
                           _buildActivitiesSection(),
@@ -368,6 +372,37 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Browse by category', testKey: Key('home.categories.title')),
+        AppSpacing.itemGap,
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: kCategories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final category = kCategories[index];
+              return CategoryPill(
+                category: category,
+                selected: _selectedCategory == category.label,
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = category.label;
+                  });
+                  widget.onSearchSubmit?.call(category.label);
+                },
               );
             },
           ),
