@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/local_db.dart';
 
+import 'admin_dashboard_page.dart';
 import 'sign_in_page.dart';
 import 'sign_up_page.dart';
 
@@ -166,14 +167,31 @@ class _ProfilePageState extends State<ProfilePage> {
                               return const _AuthCard();
                             }
                             _syncControllers(profile);
-                            return _SignedInContent(
-                              profile: profile,
-                              nameController: _nameController,
-                              email: profile.email ?? 'No email',
-                              phoneController: _phoneController,
-                              locationController: _locationController,
-                              bioController: _bioController,
-                              onSave: () => _saveProfile(profile),
+                            return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('admins')
+                                  .doc(profile.uid)
+                                  .snapshots(),
+                              builder: (context, adminSnapshot) {
+                                final isAdmin = adminSnapshot.data?.exists == true;
+                                return _SignedInContent(
+                                  profile: profile,
+                                  nameController: _nameController,
+                                  email: profile.email ?? 'No email',
+                                  phoneController: _phoneController,
+                                  locationController: _locationController,
+                                  bioController: _bioController,
+                                  isAdmin: isAdmin,
+                                  onOpenAdmin: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const AdminDashboardPage(),
+                                      ),
+                                    );
+                                  },
+                                  onSave: () => _saveProfile(profile),
+                                );
+                              },
                             );
                           },
                         );
@@ -280,6 +298,8 @@ class _SignedInContent extends StatelessWidget {
   final TextEditingController phoneController;
   final TextEditingController locationController;
   final TextEditingController bioController;
+  final bool isAdmin;
+  final VoidCallback onOpenAdmin;
   final VoidCallback onSave;
 
   const _SignedInContent({
@@ -289,6 +309,8 @@ class _SignedInContent extends StatelessWidget {
     required this.phoneController,
     required this.locationController,
     required this.bioController,
+    required this.isAdmin,
+    required this.onOpenAdmin,
     required this.onSave,
   });
 
@@ -401,6 +423,10 @@ class _SignedInContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _WalletCard(uid: profile.uid),
+        if (isAdmin) ...[
+          const SizedBox(height: 16),
+          _AdminToolsCard(onOpenAdmin: onOpenAdmin),
+        ],
         const SizedBox(height: 16),
         Container(
           width: double.infinity,
@@ -736,6 +762,71 @@ class _WalletCardState extends State<_WalletCard> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _AdminToolsCard extends StatelessWidget {
+  final VoidCallback onOpenAdmin;
+  const _AdminToolsCard({required this.onOpenAdmin});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.admin_panel_settings, color: Color(0xFFF7E7C5)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Admin tools',
+                  style: TextStyle(
+                    color: Color(0xFFF7E7C5),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'View metrics and manage administrators.',
+                  style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: theme.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: onOpenAdmin,
+            icon: const Icon(Icons.analytics_outlined, size: 18),
+            label: const Text(
+              'Dashboard',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
       ),
     );
   }

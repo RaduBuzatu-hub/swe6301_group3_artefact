@@ -12,14 +12,22 @@ import 'sign_in_page.dart';
 import 'sign_up_page.dart';
 import '../models/trip_entry.dart';
 import '../data/local_db.dart';
+import '../data/eco_locations.dart';
 
 /// Main landing screen showing featured escapes, filters, and activities.
 /// Host can hook into [onSearchSubmit], [onJoinTrip], and [onOpenProfile] for navigation.
 class HomePage extends StatefulWidget {
   final ValueChanged<String>? onSearchSubmit;
   final ValueChanged<TripEntry>? onJoinTrip;
+  final ValueChanged<EcoLocation>? onOpenFeatured;
   final VoidCallback? onOpenProfile;
-  const HomePage({super.key, this.onSearchSubmit, this.onJoinTrip, this.onOpenProfile});
+  const HomePage({
+    super.key,
+    this.onSearchSubmit,
+    this.onJoinTrip,
+    this.onOpenFeatured,
+    this.onOpenProfile,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -78,7 +86,7 @@ class _HomePageState extends State<HomePage> {
     _FeaturedEscape(
       title: 'Mountain Retreat',
       subtitle: '3 nights',
-      assetPath: 'lib/screens/assets/forest_replanting.png',
+      assetPath: 'lib/screens/assets/mountain_retreat.jpeg',
       location: 'Swiss Alps',
       price: 'from GBP320 / 3 nights',
     ),
@@ -122,6 +130,33 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _featuredController.dispose();
     super.dispose();
+  }
+
+  EcoLocation? _findFeaturedLocation(_FeaturedEscape escape) {
+    for (final location in kEcoLocations) {
+      if (location.title.toLowerCase() == escape.title.toLowerCase()) {
+        return location;
+      }
+    }
+    return null;
+  }
+
+  Widget _buildFeaturedImage(_FeaturedEscape escape) {
+    final location = _findFeaturedLocation(escape);
+    if (location == null) {
+      return Image.asset(
+        escape.assetPath,
+        fit: BoxFit.cover,
+      );
+    }
+    return Image.network(
+      location.imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Image.asset(
+        escape.assetPath,
+        fit: BoxFit.cover,
+      ),
+    );
   }
 
   @override
@@ -357,19 +392,23 @@ class _HomePageState extends State<HomePage> {
             itemCount: _featuredEscapes.length,
             itemBuilder: (context, index) {
               final escape = _featuredEscapes[index];
+              final location = _findFeaturedLocation(escape);
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: GestureDetector(
-                  onTap: () => widget.onSearchSubmit?.call(escape.location),
+                  onTap: () {
+                    if (location != null && widget.onOpenFeatured != null) {
+                      widget.onOpenFeatured!(location);
+                    } else {
+                      widget.onSearchSubmit?.call(escape.location);
+                    }
+                  },
                   child: FeaturedCard(
                     title: escape.title,
                     subtitle: escape.subtitle,
                     location: escape.location,
                     price: escape.price,
-                    image: Image.asset(
-                      escape.assetPath,
-                      fit: BoxFit.cover,
-                    ),
+                    image: _buildFeaturedImage(escape),
                   ),
                 ),
               );
@@ -387,7 +426,7 @@ class _HomePageState extends State<HomePage> {
         const SectionTitle('Browse by category', testKey: Key('home.categories.title')),
         AppSpacing.itemGap,
         SizedBox(
-          height: 96,
+          height: 84,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: kCategories.length,
@@ -467,10 +506,10 @@ class _HomePageState extends State<HomePage> {
                   final isPast = range.end.isBefore(DateTime.now());
                   widget.onJoinTrip?.call(
                     TripEntry(
-                      title: 'Beach Clean-Up - Saturday',
+                      title: 'Coastal Clean-Up Experience',
                       subtitle: 'Falmouth',
                       location: 'Falmouth',
-                      price: 'Free - 10:00-13:00',
+                      price: 'Free - 3-hour session',
                       assetPath: 'lib/screens/assets/beach_clean_up.png',
                       date: range.start,
                       endDate: range.end,
@@ -501,7 +540,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Beach Clean-Up - Saturday',
+                    'Coastal Clean-Up Experience',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppColors.highlight,
                           fontWeight: FontWeight.w700,
@@ -509,7 +548,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Falmouth - 10:00-13:00',
+                    'Falmouth - Flexible sessions',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.highlight,
                           fontWeight: FontWeight.w600,
@@ -546,10 +585,10 @@ class _HomePageState extends State<HomePage> {
                                 final isPast = range.end.isBefore(DateTime.now());
                                 widget.onJoinTrip?.call(
                                   TripEntry(
-                                    title: 'Beach Clean-Up - Saturday',
+                                    title: 'Coastal Clean-Up Experience',
                                     subtitle: 'Falmouth',
                                     location: 'Falmouth',
-                                    price: 'Free - 10:00-13:00',
+                                    price: 'Free - 3-hour session',
                                     assetPath: 'lib/screens/assets/beach_clean_up.png',
                                     date: range.start,
                                     endDate: range.end,
@@ -715,3 +754,4 @@ class _ActivityTag extends StatelessWidget {
     );
   }
 }
+

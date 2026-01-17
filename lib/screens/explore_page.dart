@@ -12,7 +12,7 @@ class ExplorePage extends StatefulWidget {
   final Set<String> savedKeys;
   final ValueChanged<EcoLocation> onToggleSave;
   final Set<String> bookedKeys;
-  final void Function(EcoLocation, DateTimeRange) onBookStay;
+  final void Function(EcoLocation, BookingDetails) onBookStay;
   final ValueChanged<EcoLocation> onUnbookStay;
   final ValueChanged<TripEntry>? onJoinTrip;
   final VoidCallback? onViewTrips;
@@ -696,8 +696,12 @@ class _ExplorePageState extends State<ExplorePage> {
                           child: _ResultCard(
                             item: filteredLocations.first,
                             isFullWidth: true,
-                            isSaved:
-                                widget.savedKeys.contains(_locationKey(filteredLocations.first)),
+                            isSaved: widget.savedKeys
+                                    .contains(_locationKey(filteredLocations.first)) &&
+                                !widget.bookedKeys
+                                    .contains(_locationKey(filteredLocations.first)),
+                            isBooked: widget.bookedKeys
+                                .contains(_locationKey(filteredLocations.first)),
                             onToggleSave: () => widget.onToggleSave(filteredLocations.first),
                             onOpenDetail: () {
                               Navigator.of(context).push(
@@ -710,8 +714,8 @@ class _ExplorePageState extends State<ExplorePage> {
                                         .contains(_locationKey(filteredLocations.first)),
                                     onToggleSave: () =>
                                         widget.onToggleSave(filteredLocations.first),
-                                    onBook: (date) =>
-                                        widget.onBookStay(filteredLocations.first, date),
+                                    onBook: (details) =>
+                                        widget.onBookStay(filteredLocations.first, details),
                                     onUnbook: () => widget.onUnbookStay(filteredLocations.first),
                                     onViewTrips: widget.onViewTrips,
                                     onViewWallet: widget.onViewWallet,
@@ -732,7 +736,10 @@ class _ExplorePageState extends State<ExplorePage> {
                                 child: _ResultCard(
                                   item: item,
                                   isFullWidth: false,
-                                  isSaved: widget.savedKeys.contains(_locationKey(item)),
+                                  isSaved: widget.savedKeys.contains(_locationKey(item)) &&
+                                      !widget.bookedKeys.contains(_locationKey(item)),
+                                  isBooked:
+                                      widget.bookedKeys.contains(_locationKey(item)),
                                   onToggleSave: () => widget.onToggleSave(item),
                                   onOpenDetail: () {
                                     Navigator.of(context).push(
@@ -743,7 +750,7 @@ class _ExplorePageState extends State<ExplorePage> {
                                           onToggleSave: () => widget.onToggleSave(item),
                                           isBooked:
                                               widget.bookedKeys.contains(_locationKey(item)),
-                                          onBook: (date) => widget.onBookStay(item, date),
+                                          onBook: (details) => widget.onBookStay(item, details),
                                           onUnbook: () => widget.onUnbookStay(item),
                                           onViewTrips: widget.onViewTrips,
                                           onViewWallet: widget.onViewWallet,
@@ -1069,18 +1076,21 @@ class _ResultCard extends StatelessWidget {
   final EcoLocation item;
   final bool isFullWidth;
   final bool isSaved;
+  final bool isBooked;
   final VoidCallback onToggleSave;
   final VoidCallback onOpenDetail;
   const _ResultCard({
     required this.item,
     this.isFullWidth = true,
     required this.isSaved,
+    this.isBooked = false,
     required this.onToggleSave,
     required this.onOpenDetail,
   });
 
   @override
   Widget build(BuildContext context) {
+    final canSave = !isBooked;
     return InkWell(
       borderRadius: BorderRadius.circular(isFullWidth ? 18 : 16),
       onTap: onOpenDetail,
@@ -1125,9 +1135,7 @@ class _ResultCard extends StatelessWidget {
                       top: 10,
                       right: 10,
                       child: InkWell(
-                        onTap: () {
-                          onToggleSave();
-                        },
+                        onTap: canSave ? onToggleSave : null,
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
                           padding: const EdgeInsets.all(6),
@@ -1137,7 +1145,9 @@ class _ResultCard extends StatelessWidget {
                           ),
                           child: Icon(
                             isSaved ? Icons.favorite : Icons.favorite_border,
-                            color: isSaved ? Colors.pinkAccent.shade100 : Colors.white,
+                            color: canSave
+                                ? (isSaved ? Colors.pinkAccent.shade100 : Colors.white)
+                                : Colors.white70,
                           ),
                         ),
                       ),

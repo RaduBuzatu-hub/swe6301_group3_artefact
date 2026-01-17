@@ -78,11 +78,11 @@ class EventDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Beach Clean-Up - Saturday', style: titleStyle),
+                  Text('Coastal Clean-Up Experience', style: titleStyle),
                   const SizedBox(height: 8),
                   Text('Falmouth Beach, Cornwall', style: bodyStyle),
                   const SizedBox(height: 4),
-                  Text('Free - 10:00-13:00', style: bodyStyle),
+                  Text('Free - 3-hour session', style: bodyStyle),
                   const SizedBox(height: 20),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +99,7 @@ class EventDetailPage extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 6),
-                            Text('Saturday, 20 October\n10:00-13:00', style: bodyStyle),
+                            Text('Choose your date\n3-hour session', style: bodyStyle),
                             const SizedBox(height: 18),
                             Row(
                               children: [
@@ -187,3 +187,4 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 }
+

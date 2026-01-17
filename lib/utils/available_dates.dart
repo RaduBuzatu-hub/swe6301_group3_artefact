@@ -221,6 +221,80 @@ Future<DateTimeRange?> showPricedDateRangePicker({
                         ),
                       ),
                     ),
+                    calendarBuilders: CalendarBuilders(
+                      disabledBuilder: (context, day, focusedDay) {
+                        final isOutside = day.month != focusedDay.month;
+                        final textColor = theme.colorScheme.onSurface
+                            .withValues(alpha: isOutside ? 0.25 : 0.45);
+                        final xColor = theme.colorScheme.error
+                            .withValues(alpha: isOutside ? 0.35 : 0.7);
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Center(
+                              child: Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Text(
+                                'x',
+                                style: TextStyle(
+                                  color: xColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      defaultBuilder: (context, day, focusedDay) {
+                        final isOutside = day.month != focusedDay.month;
+                        final textColor = theme.colorScheme.onSurface
+                            .withValues(alpha: isOutside ? 0.35 : 0.85);
+                        if (isOutside) {
+                          return Center(
+                            child: Text(
+                              '${day.day}',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        }
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Center(
+                              child: Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Icon(
+                                Icons.check,
+                                size: 12,
+                                color: Color(0xFF43A047),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                     enabledDayPredicate: (day) => allowedDays.contains(_dayKey(day)),
                     onRangeSelected: (start, end, focused) {
                       setState(() {

@@ -26,7 +26,7 @@ class CategoryPill extends StatelessWidget {
     super.key,
     required this.category,
     this.width = 72,
-    this.height = 86,
+    this.height = 74,
     this.selected = false,
     this.onTap,
   });
@@ -41,7 +41,7 @@ class CategoryPill extends StatelessWidget {
         key: Key('category.${category.label}'),
         width: width,
         height: height,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(AppRadius.card),
@@ -53,8 +53,8 @@ class CategoryPill extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(category.icon, color: Colors.white, size: 24),
-            const SizedBox(height: 6),
+            Icon(category.icon, color: Colors.white, size: 20),
+            const SizedBox(height: 4),
             Text(
               category.label,
               textAlign: TextAlign.center,

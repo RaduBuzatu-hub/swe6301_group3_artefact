@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/home_page.dart';
 import '../screens/explore_page.dart';
@@ -28,6 +29,7 @@ class _BottomNavState extends State<BottomNav> {
   final List<TripEntry> _trips = [];
   final List<TripEntry> _savedActivities = [];
   StreamSubscription<User?>? _authSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _bookingSub;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -41,11 +43,21 @@ class _BottomNavState extends State<BottomNav> {
   @override
   void dispose() {
     _authSub?.cancel();
+    _bookingSub?.cancel();
     super.dispose();
   }
 
   String _tripKey(String title, String location) =>
       '${title.toLowerCase()}|${location.toLowerCase()}';
+
+  String _savedDocId({
+    required String uid,
+    required String title,
+    required String location,
+  }) {
+    final key = _tripKey(title, location);
+    return Uri.encodeComponent('$uid|$key');
+  }
 
   void _handleSearchSubmit(String query) {
     setState(() {
@@ -66,11 +78,13 @@ class _BottomNavState extends State<BottomNav> {
   }
 
   void _toggleSavedActivity(EcoLocation location) {
+    final key = _tripKey(location.title, location.location);
+    final isBooked = _trips.any((t) => _tripKey(t.title, t.location) == key);
+    if (isBooked) return;
     if (!_isSignedIn()) {
       _promptSignInForSaves();
       return;
     }
-    final key = _tripKey(location.title, location.location);
     final existingIndex =
         _savedActivities.indexWhere((t) => _tripKey(t.title, t.location) == key);
 
@@ -100,6 +114,8 @@ class _BottomNavState extends State<BottomNav> {
 
   Future<void> _loadUserData(User? user) async {
     if (user == null) {
+      await _bookingSub?.cancel();
+      _bookingSub = null;
       setState(() {
         _trips.clear();
         _savedActivities.clear();
@@ -109,13 +125,58 @@ class _BottomNavState extends State<BottomNav> {
     // Pull trips/saved items from local DB when user logs in.
     final tripsRows = await LocalDb.instance.getTrips(uid: user.uid, saved: false);
     final savedRows = await LocalDb.instance.getTrips(uid: user.uid, saved: true);
+    final bookedKeys = tripsRows
+        .map((row) => _tripKey(row['title'] as String? ?? '', row['location'] as String? ?? ''))
+        .toSet();
+    final filteredSavedRows = <Map<String, dynamic>>[];
+    for (final row in savedRows) {
+      final title = row['title'] as String? ?? '';
+      final location = row['location'] as String? ?? '';
+      final key = _tripKey(title, location);
+      if (bookedKeys.contains(key)) {
+        await LocalDb.instance.deleteSavedActivity(
+          uid: user.uid,
+          title: title,
+          location: location,
+        );
+        await _deleteSavedActivityRemote(
+          uid: user.uid,
+          title: title,
+          location: location,
+        );
+        continue;
+      }
+      filteredSavedRows.add(row);
+    }
     setState(() {
       _trips
         ..clear()
         ..addAll(tripsRows.map(_mapToTrip));
       _savedActivities
         ..clear()
-        ..addAll(savedRows.map(_mapToTrip));
+        ..addAll(filteredSavedRows.map(_mapToTrip));
+    });
+    _startBookingWatcher(user);
+  }
+
+  void _startBookingWatcher(User user) {
+    _bookingSub?.cancel();
+    _bookingSub = FirebaseFirestore.instance
+        .collection('bookings')
+        .where('uid', isEqualTo: user.uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+      for (final change in snapshot.docChanges) {
+        final data = change.doc.data();
+        if (data == null) continue;
+        final status = data['status'] as String? ?? 'paid';
+        if (status != 'cancelled') continue;
+        final title = data['title'] as String? ?? '';
+        final location = data['location'] as String? ?? '';
+        if (title.isEmpty || location.isEmpty) continue;
+        _removeTripByKey(title: title, location: location);
+      }
     });
   }
 
@@ -178,6 +239,33 @@ class _BottomNavState extends State<BottomNav> {
     await LocalDb.instance.deleteTrip(uid: uid, title: title, location: location);
   }
 
+  Future<void> _recordBookingPayment({
+    required String uid,
+    required TripEntry trip,
+    required BookingDetails details,
+  }) async {
+    if (details.total <= 0) return;
+    try {
+      await FirebaseFirestore.instance.collection('bookings').add(
+        {
+          'uid': uid,
+          'title': trip.title,
+          'location': trip.location,
+          'price': trip.price,
+          'amount_paid': details.total,
+          'nightly_rate': details.nightlyRate,
+          'nights': details.nights,
+          'start_date_iso': details.range.start.toIso8601String(),
+          'end_date_iso': details.range.end.toIso8601String(),
+          'status': 'paid',
+          'created_at': FieldValue.serverTimestamp(),
+        },
+      );
+    } catch (_) {
+      // Ignore remote failures; booking still succeeds locally.
+    }
+  }
+
   Future<void> _persistSavedAddition(EcoLocation location) async {
     final uid = _uid;
     if (uid == null) return;
@@ -194,17 +282,74 @@ class _BottomNavState extends State<BottomNav> {
       ),
     );
     await LocalDb.instance.upsertTrip(uid: uid, data: map, saved: true);
+    await _persistSavedAdditionRemote(
+      uid: uid,
+      location: location,
+    );
   }
 
   Future<void> _persistSavedRemoval(EcoLocation location) async {
+    await _persistSavedRemovalByKey(
+      title: location.title,
+      location: location.location,
+    );
+  }
+
+  Future<void> _persistSavedRemovalByKey({
+    required String title,
+    required String location,
+  }) async {
     final uid = _uid;
     if (uid == null) return;
     // Remove saved trip for this user.
     await LocalDb.instance.deleteSavedActivity(
       uid: uid,
+      title: title,
+      location: location,
+    );
+    await _deleteSavedActivityRemote(
+      uid: uid,
+      title: title,
+      location: location,
+    );
+  }
+
+  Future<void> _persistSavedAdditionRemote({
+    required String uid,
+    required EcoLocation location,
+  }) async {
+    final docId = _savedDocId(
+      uid: uid,
       title: location.title,
       location: location.location,
     );
+    try {
+      await FirebaseFirestore.instance.collection('saved_activities').doc(docId).set(
+        {
+          'uid': uid,
+          'title': location.title,
+          'location': location.location,
+          'price': location.price,
+          'saved_at': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    } catch (_) {
+      // Ignore remote save failures; local state is still updated.
+    }
+  }
+
+  Future<void> _deleteSavedActivityRemote({
+    required String uid,
+    required String title,
+    required String location,
+  }) async {
+    final docId = _savedDocId(uid: uid, title: title, location: location);
+    try {
+      await FirebaseFirestore.instance.collection('saved_activities').doc(docId).delete();
+    } catch (_) {
+      // Ignore remote delete failures; local state is still updated.
+    }
   }
 
   Future<void> _promptSignInForSaves() async {
@@ -257,49 +402,98 @@ class _BottomNavState extends State<BottomNav> {
     );
   }
 
-  void _bookLocation(EcoLocation location, DateTimeRange range) {
+  void _bookLocation(EcoLocation location, BookingDetails details) {
+    final range = details.range;
     final key = _tripKey(location.title, location.location);
     final exists = _trips.any((t) => _tripKey(t.title, t.location) == key);
-    if (exists) return;
     final isPast = range.end.isBefore(DateTime.now());
+    final bookedTrip = TripEntry(
+      title: location.title,
+      subtitle: location.meta,
+      location: location.location,
+      price: location.price,
+      imageUrl: location.imageUrl,
+      assetPath: null,
+      date: range.start,
+      endDate: range.end,
+      isPast: isPast,
+    );
+    var removedSaved = false;
     setState(() {
-      _trips.add(
-        TripEntry(
-          title: location.title,
-          subtitle: location.meta,
-          location: location.location,
-          price: location.price,
-          imageUrl: location.imageUrl,
-          assetPath: null,
-          date: range.start,
-          endDate: range.end,
-          isPast: isPast,
-        ),
-      );
-      _persistTrip(_trips.last, saved: false);
+      if (!exists) {
+        _trips.add(bookedTrip);
+      }
+      final savedIndex =
+          _savedActivities.indexWhere((t) => _tripKey(t.title, t.location) == key);
+      if (savedIndex >= 0) {
+        _savedActivities.removeAt(savedIndex);
+        removedSaved = true;
+      }
     });
+    if (!exists) {
+      _persistTrip(bookedTrip, saved: false);
+      final uid = _uid;
+      if (uid != null) {
+        _recordBookingPayment(
+          uid: uid,
+          trip: bookedTrip,
+          details: details,
+        );
+      }
+    }
+    if (removedSaved) {
+      _persistSavedRemovalByKey(
+        title: location.title,
+        location: location.location,
+      );
+    }
   }
 
-  void _rebookTrip(TripEntry trip, DateTimeRange range) {
+  void _rebookTrip(TripEntry trip, BookingDetails details) {
+    final range = details.range;
     final key = _tripKey(trip.title, trip.location);
     final exists = _trips.any((t) => _tripKey(t.title, t.location) == key);
-    if (exists) return;
     final isPast = range.end.isBefore(DateTime.now());
+    final updated = TripEntry(
+      title: trip.title,
+      subtitle: trip.subtitle,
+      location: trip.location,
+      price: trip.price,
+      imageUrl: trip.imageUrl,
+      assetPath: trip.assetPath,
+      date: range.start,
+      endDate: range.end,
+      isPast: isPast,
+    );
+    var removedSaved = false;
     setState(() {
-      final updated = TripEntry(
-        title: trip.title,
-        subtitle: trip.subtitle,
-        location: trip.location,
-        price: trip.price,
-        imageUrl: trip.imageUrl,
-        assetPath: trip.assetPath,
-        date: range.start,
-        endDate: range.end,
-        isPast: isPast,
-      );
-      _trips.add(updated);
-      _persistTrip(updated, saved: false);
+      if (!exists) {
+        _trips.add(updated);
+      }
+      final savedIndex =
+          _savedActivities.indexWhere((t) => _tripKey(t.title, t.location) == key);
+      if (savedIndex >= 0) {
+        _savedActivities.removeAt(savedIndex);
+        removedSaved = true;
+      }
     });
+    if (!exists) {
+      _persistTrip(updated, saved: false);
+      final uid = _uid;
+      if (uid != null) {
+        _recordBookingPayment(
+          uid: uid,
+          trip: updated,
+          details: details,
+        );
+      }
+    }
+    if (removedSaved) {
+      _persistSavedRemovalByKey(
+        title: trip.title,
+        location: trip.location,
+      );
+    }
   }
 
   void _removeTripByKey({required String title, required String location}) {
@@ -325,6 +519,31 @@ class _BottomNavState extends State<BottomNav> {
       HomePage(
         onSearchSubmit: _handleSearchSubmit,
         onJoinTrip: _handleJoinTrip,
+        onOpenFeatured: (location) {
+          final key = _tripKey(location.title, location.location);
+          final isBooked = _trips.any((t) => _tripKey(t.title, t.location) == key);
+          final isSaved =
+              _savedActivities.any((t) => _tripKey(t.title, t.location) == key);
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => LocationDetailPage(
+                location: location,
+                isSaved: isSaved,
+                isBooked: isBooked,
+                onToggleSave: () => _toggleSavedActivity(location),
+                onBook: (details) => _bookLocation(location, details),
+                onUnbook: () => _unbookLocation(location),
+                onViewTrips: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _index = 2;
+                  });
+                },
+                onViewWallet: _openWallet,
+              ),
+            ),
+          );
+        },
         onOpenProfile: () {
           setState(() {
             _index = 3;
@@ -396,7 +615,7 @@ class _BottomNavState extends State<BottomNav> {
                     isSaved: isSaved,
                     isBooked: isBooked,
                     onToggleSave: () => _toggleSavedActivity(location),
-                    onBook: (date) => _rebookTrip(trip, date),
+                    onBook: (details) => _rebookTrip(trip, details),
                     onUnbook: () => _removeTripByKey(
                       title: trip.title,
                       location: trip.location,

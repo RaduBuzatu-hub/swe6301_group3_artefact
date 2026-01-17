@@ -4,13 +4,27 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../data/eco_locations.dart';
 import '../utils/available_dates.dart';
 
+class BookingDetails {
+  final DateTimeRange range;
+  final int nightlyRate;
+  final int nights;
+  final int total;
+
+  const BookingDetails({
+    required this.range,
+    required this.nightlyRate,
+    required this.nights,
+    required this.total,
+  });
+}
+
 /// Location detail page used for both saved and booked contexts.
 class LocationDetailPage extends StatefulWidget {
   final EcoLocation location;
   final bool isSaved;
   final bool isBooked;
   final VoidCallback onToggleSave;
-  final ValueChanged<DateTimeRange> onBook;
+  final ValueChanged<BookingDetails> onBook;
   final VoidCallback onUnbook;
   final VoidCallback? onViewTrips;
   final VoidCallback? onViewWallet;
@@ -39,7 +53,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
   @override
   void initState() {
     super.initState();
-    _saved = widget.isSaved;
+    _saved = widget.isSaved && !widget.isBooked;
     _booked = widget.isBooked;
     _availableDates = buildAvailableDates(
       seed: '${widget.location.title}|${widget.location.location}',
@@ -49,6 +63,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
   }
 
   void _handleToggleSave() {
+    if (_booked) return;
     widget.onToggleSave();
     setState(() {
       _saved = !_saved;
@@ -195,15 +210,18 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
       }
       return;
     }
-    final wasSaved = _saved;
-    widget.onBook(selectedRange);
+    widget.onBook(
+      BookingDetails(
+        range: selectedRange,
+        nightlyRate: _nightlyRate,
+        nights: nights,
+        total: total,
+      ),
+    );
     setState(() {
       _booked = true;
-      _saved = true;
+      _saved = false;
     });
-    if (!wasSaved) {
-      widget.onToggleSave();
-    }
   }
 
   @override
@@ -217,8 +235,10 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(_saved ? Icons.favorite : Icons.favorite_border, color: Colors.white),
-            onPressed: _handleToggleSave,
+            icon: Icon(_saved ? Icons.favorite : Icons.favorite_border),
+            color: Colors.white,
+            disabledColor: Colors.white70,
+            onPressed: _booked ? null : _handleToggleSave,
           ),
         ],
       ),
@@ -289,7 +309,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ElevatedButton.icon(
-                        icon: Icon(_booked ? Icons.cancel : Icons.favorite_border),
+                        icon: Icon(_booked ? Icons.cancel : Icons.book_online),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4A148C),
                           foregroundColor: Colors.white,
@@ -315,9 +335,9 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: _handleToggleSave,
+                        onPressed: _booked ? null : _handleToggleSave,
                         label: Text(
-                          _saved ? 'Saved' : 'Save to trips',
+                          _booked ? 'Already booked' : (_saved ? 'Saved' : 'Save to trips'),
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                         ),
                       ),

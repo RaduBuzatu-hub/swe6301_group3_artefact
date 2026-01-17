@@ -25,9 +25,9 @@ class ActivityItem {
 
 const List<ActivityItem> kActivities = [
   ActivityItem(
-    title: 'Beach Clean-Up - Saturday',
+    title: 'Coastal Clean-Up Experience',
     location: 'Falmouth Beach, Cornwall',
-    meta: 'Free · 10:00-13:00',
+    meta: 'Free - 3-hour session',
     price: 'Free',
     assetPath: 'lib/screens/assets/beach_clean_up.png',
     tags: ['beach', 'cornwall', 'outdoor', 'clean-up'],
@@ -61,3 +61,7 @@ const List<ActivityItem> kActivities = [
     rating: 4.1,
   ),
 ];
+
+
+
+
