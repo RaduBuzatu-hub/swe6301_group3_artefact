@@ -507,6 +507,18 @@ class _BottomNavState extends State<BottomNav> {
     _persistTripRemoval(title: removed.title, location: removed.location);
   }
 
+  void _unsaveTrip(TripEntry trip) {
+    final key = _tripKey(trip.title, trip.location);
+    final existingIndex =
+        _savedActivities.indexWhere((t) => _tripKey(t.title, t.location) == key);
+    if (existingIndex < 0) return;
+    final removed = _savedActivities[existingIndex];
+    setState(() {
+      _savedActivities.removeAt(existingIndex);
+    });
+    _persistSavedRemovalByKey(title: removed.title, location: removed.location);
+  }
+
   void _unbookLocation(EcoLocation location) {
     _removeTripByKey(title: location.title, location: location.location);
   }
@@ -631,6 +643,9 @@ class _BottomNavState extends State<BottomNav> {
                 ),
               );
             },
+            onUnbookTrip: (trip) =>
+                _removeTripByKey(title: trip.title, location: trip.location),
+            onUnsaveActivity: _unsaveTrip,
           );
         },
       ),

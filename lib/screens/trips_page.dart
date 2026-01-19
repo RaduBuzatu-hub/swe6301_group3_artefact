@@ -6,11 +6,15 @@ class TripsPage extends StatefulWidget {
   final List<TripEntry> trips;
   final List<TripEntry> savedActivities;
   final void Function(TripEntry trip)? onOpenTrip;
+  final ValueChanged<TripEntry>? onUnbookTrip;
+  final ValueChanged<TripEntry>? onUnsaveActivity;
   const TripsPage({
     super.key,
     required this.trips,
     required this.savedActivities,
     this.onOpenTrip,
+    this.onUnbookTrip,
+    this.onUnsaveActivity,
   });
 
   @override
@@ -26,6 +30,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
     final past = widget.trips.where((t) => t.isPast).toList();
 
     final cards = _tabIndex == 0 ? upcoming : past;
+    final actionLabel = _tabIndex == 0 ? 'Unbook' : 'Remove';
 
     return Container(
       decoration: const BoxDecoration(
@@ -95,6 +100,10 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                         _TripCard(
                           trip: cards[i],
                           onTap: widget.onOpenTrip,
+                          actionLabel: widget.onUnbookTrip != null ? actionLabel : null,
+                          onAction: widget.onUnbookTrip != null
+                              ? () => widget.onUnbookTrip!(cards[i])
+                              : null,
                         ),
                         if (i != cards.length - 1) const SizedBox(height: 16),
                       ],
@@ -103,6 +112,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                     _SavedSection(
                       saved: widget.savedActivities,
                       onTap: widget.onOpenTrip,
+                      onUnsave: widget.onUnsaveActivity,
                     ),
                   ],
                 ),
@@ -118,7 +128,12 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
 class _SavedSection extends StatelessWidget {
   final List<TripEntry> saved;
   final void Function(TripEntry trip)? onTap;
-  const _SavedSection({required this.saved, this.onTap});
+  final ValueChanged<TripEntry>? onUnsave;
+  const _SavedSection({
+    required this.saved,
+    this.onTap,
+    this.onUnsave,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +160,8 @@ class _SavedSection extends StatelessWidget {
                 _TripCard(
                   trip: saved[i],
                   onTap: onTap,
+                  actionLabel: onUnsave != null ? 'Unsave' : null,
+                  onAction: onUnsave != null ? () => onUnsave!(saved[i]) : null,
                 ),
                 if (i != saved.length - 1) const SizedBox(height: 16),
               ],
@@ -199,10 +216,35 @@ class _TripsTabButton extends StatelessWidget {
 class _TripCard extends StatelessWidget {
   final TripEntry trip;
   final void Function(TripEntry trip)? onTap;
-  const _TripCard({required this.trip, this.onTap});
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  const _TripCard({
+    required this.trip,
+    this.onTap,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  String _formatDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  String? _bookingDetails() {
+    if (trip.date == null || trip.endDate == null) return null;
+    final start = trip.date!;
+    final end = trip.endDate!;
+    final range = '${_formatDate(start)} to ${_formatDate(end)}';
+    final nights = end.difference(start).inDays;
+    final nightsLabel = nights == 1 ? '1 night' : '$nights nights';
+    return 'Stay: $range • $nightsLabel';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bookingDetails = _bookingDetails();
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: onTap != null ? () => onTap!(trip) : null,
@@ -275,6 +317,28 @@ class _TripCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                   ),
+                  if (bookingDetails != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      bookingDetails,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFFB7F5C2),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                  if (actionLabel != null && onAction != null) ...[
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: onAction,
+                      icon: const Icon(Icons.cancel_outlined, size: 16),
+                      label: Text(actionLabel!),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF7DFA5),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

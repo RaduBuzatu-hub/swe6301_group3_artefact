@@ -222,6 +222,41 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
       _booked = true;
       _saved = false;
     });
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('Booking confirmed'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${widget.location.title} • ${widget.location.location}'),
+              const SizedBox(height: 12),
+              _InvoiceRow(label: 'Dates', value: _formatRange(selectedRange)),
+              _InvoiceRow(label: 'Nights', value: '$nights'),
+              _InvoiceRow(label: 'Rate', value: 'Aś$_nightlyRate / night'),
+              _InvoiceRow(label: 'Total', value: 'Aś$total'),
+              const SizedBox(height: 12),
+              const Text(
+                'Your booking is active. You can manage it in Trips.',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Done'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -389,6 +424,40 @@ class _TagChip extends StatelessWidget {
           color: Color(0xFF2E2A68),
           fontWeight: FontWeight.w700,
         ),
+      ),
+    );
+  }
+}
+
+String _formatRange(DateTimeRange range) {
+  String formatDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  return '${formatDate(range.start)} to ${formatDate(range.end)}';
+}
+
+class _InvoiceRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _InvoiceRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          Text(value),
+        ],
       ),
     );
   }
