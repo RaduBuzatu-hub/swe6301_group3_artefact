@@ -7,11 +7,13 @@ class ActivityDetailPage extends StatelessWidget {
   final TripEntry entry;
   final String tagPrimary;
   final String tagSecondary;
+  final Future<DateTimeRange?> Function(BuildContext, List<DateTime>)? dateRangePicker;
   const ActivityDetailPage({
     super.key,
     required this.entry,
     required this.tagPrimary,
     required this.tagSecondary,
+    this.dateRangePicker,
   });
 
   Future<void> _handleJoin(BuildContext context) async {
@@ -20,11 +22,15 @@ class ActivityDetailPage extends StatelessWidget {
       count: 6,
       rangeDays: 30,
     );
-    final selectedRange = await showAvailableDateRangePicker(
-      context: context,
-      availableDates: availableDates,
-      helpText: 'Select available dates',
-    );
+    final picker = dateRangePicker ??
+        (BuildContext ctx, List<DateTime> dates) {
+          return showAvailableDateRangePicker(
+            context: ctx,
+            availableDates: dates,
+            helpText: 'Select available dates',
+          );
+        };
+    final selectedRange = await picker(context, availableDates);
     if (selectedRange == null || !context.mounted) return;
     final isPast = selectedRange.end.isBefore(DateTime.now());
     Navigator.of(context).pop(

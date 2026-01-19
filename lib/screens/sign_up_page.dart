@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/local_db.dart';
+import '../utils/auth_helpers.dart';
 
 /// Registration flow; creates Firebase user then stores a local profile row.
 class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+  final FirebaseAuth? auth;
+  const SignUpPage({super.key, this.auth});
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -15,7 +17,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
-  bool _loading = false;
+  AuthProcessState _registerState = const AuthProcessState.idle();
+
+  FirebaseAuth get _auth => widget.auth ?? FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -126,8 +130,8 @@ class _SignUpPageState extends State<SignUpPage> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              onPressed: _loading ? null : _register,
-                              child: _loading
+                              onPressed: _registerState.isLoading ? null : _register,
+                              child: _registerState.isLoading
                                   ? const SizedBox(
                                       height: 20,
                                       width: 20,
@@ -206,14 +210,33 @@ class _SignUpPageState extends State<SignUpPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showMessage('Please enter email and password.');
+    final validationMessage = AuthInputValidator.validateEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (validationMessage != null) {
+      if (mounted) {
+        setState(() {
+          _registerState = AuthProcessReducer.reduce(
+            _registerState,
+            AuthProcessEvent.failure(validationMessage),
+          );
+        });
+      }
+      _showMessage(validationMessage);
       return;
     }
 
-    setState(() => _loading = true);
+    if (mounted) {
+      setState(() {
+        _registerState = AuthProcessReducer.reduce(
+          _registerState,
+          const AuthProcessEvent.start(),
+        );
+      });
+    }
     try {
-      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final cred = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -237,27 +260,36 @@ class _SignUpPageState extends State<SignUpPage> {
         await LocalDb.instance.upsertProfile(profile);
       }
       if (mounted && Navigator.of(context).canPop()) {
+        setState(() {
+          _registerState = AuthProcessReducer.reduce(
+            _registerState,
+            const AuthProcessEvent.success(),
+          );
+        });
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      _showMessage(_messageForCode(e.code));
+      final message = AuthErrorMapper.signUpMessage(e.code);
+      if (mounted) {
+        setState(() {
+          _registerState = AuthProcessReducer.reduce(
+            _registerState,
+            AuthProcessEvent.failure(message),
+          );
+        });
+      }
+      _showMessage(message);
     } catch (_) {
-      _showMessage('Something went wrong. Please try again.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  String _messageForCode(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'An account already exists for that email.';
-      case 'invalid-email':
-        return 'That email looks invalid.';
-      case 'weak-password':
-        return 'Password should be stronger (min 6 characters).';
-      default:
-        return 'Unable to create account right now.';
+      const message = 'Something went wrong. Please try again.';
+      if (mounted) {
+        setState(() {
+          _registerState = AuthProcessReducer.reduce(
+            _registerState,
+            const AuthProcessEvent.failure(message),
+          );
+        });
+      }
+      _showMessage(message);
     }
   }
 

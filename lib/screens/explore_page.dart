@@ -4,6 +4,7 @@ import 'search_page.dart';
 import 'location_detail_page.dart';
 import '../data/activities.dart';
 import '../models/trip_entry.dart';
+import '../utils/explore_filters.dart';
 import 'activity_detail_page.dart';
 
 /// Explore destinations/activities; supports search query, saved/booked toggles, and filters.
@@ -15,6 +16,8 @@ class ExplorePage extends StatefulWidget {
   final void Function(EcoLocation, BookingDetails) onBookStay;
   final ValueChanged<EcoLocation> onUnbookStay;
   final ValueChanged<TripEntry>? onJoinTrip;
+  final Future<DateTimeRange?> Function(BuildContext, List<DateTime>)?
+      activityDateRangePicker;
   final VoidCallback? onViewTrips;
   final VoidCallback? onViewWallet;
   const ExplorePage({
@@ -26,6 +29,7 @@ class ExplorePage extends StatefulWidget {
     required this.onBookStay,
     required this.onUnbookStay,
     this.onJoinTrip,
+    this.activityDateRangePicker,
     this.onViewTrips,
     this.onViewWallet,
   });
@@ -37,10 +41,10 @@ class ExplorePage extends StatefulWidget {
 class _ExplorePageState extends State<ExplorePage> {
   late String _currentQuery;
   final Set<String> _activeFilters = {};
-  _CategoryFilter _categoryFilter = _CategoryFilter.all;
+  ExploreCategoryFilter _categoryFilter = ExploreCategoryFilter.all;
   String _selectedLocation = 'Anywhere';
   String _selectedEcoTag = 'Any tag';
-  _SortOption _sortOption = _SortOption.ratingDesc;
+  ExploreSortOption _sortOption = ExploreSortOption.ratingDesc;
 
   static const List<_FilterOption> _filterOptions = [
     _FilterOption(id: 'low_co2', label: 'Low CO₂ only'),
@@ -103,32 +107,24 @@ class _ExplorePageState extends State<ExplorePage> {
     return ['Any tag', ...list];
   }
 
-  bool _matchesLocation(String location) {
-    if (_selectedLocation == 'Anywhere') return true;
-    final selected = _selectedLocation.toLowerCase();
-    final loc = location.toLowerCase();
-    return loc.contains(selected) || selected.contains(loc);
-  }
-
-  bool _matchesEcoTag({
-    required List<String> tags,
-    required String meta,
-    required String title,
-  }) {
-    if (_selectedEcoTag == 'Any tag') return true;
-    final selected = _selectedEcoTag.toLowerCase();
-    return tags.any((tag) => tag.toLowerCase().contains(selected)) ||
-        meta.toLowerCase().contains(selected) ||
-        title.toLowerCase().contains(selected);
+  ExploreFilters _buildFilters() {
+    return ExploreFilters(
+      currentQuery: _currentQuery,
+      activeFilters: _activeFilters,
+      categoryFilter: _categoryFilter,
+      selectedLocation: _selectedLocation,
+      selectedEcoTag: _selectedEcoTag,
+      sortOption: _sortOption,
+    );
   }
 
   void _resetFilters() {
     _currentQuery = 'Explore';
     _activeFilters.clear();
-    _categoryFilter = _CategoryFilter.all;
+    _categoryFilter = ExploreCategoryFilter.all;
     _selectedLocation = 'Anywhere';
     _selectedEcoTag = 'Any tag';
-    _sortOption = _SortOption.ratingDesc;
+    _sortOption = ExploreSortOption.ratingDesc;
   }
 
   bool _applyCategoryPreset(String? query) {
@@ -137,11 +133,11 @@ class _ExplorePageState extends State<ExplorePage> {
     switch (normalized) {
       case 'eco stays':
         _resetFilters();
-        _categoryFilter = _CategoryFilter.stays;
+        _categoryFilter = ExploreCategoryFilter.stays;
         return true;
       case 'activities':
         _resetFilters();
-        _categoryFilter = _CategoryFilter.activities;
+        _categoryFilter = ExploreCategoryFilter.activities;
         return true;
       case 'nature':
         _resetFilters();
@@ -153,123 +149,6 @@ class _ExplorePageState extends State<ExplorePage> {
         return true;
     }
     return false;
-  }
-
-  int? _extractPriceValue(String price) {
-    final match = RegExp(r'(\\d+)').firstMatch(price.replaceAll(',', ''));
-    return match != null ? int.tryParse(match.group(1) ?? '') : null;
-  }
-
-  bool _isBudgetPrice(String price) {
-    final value = _extractPriceValue(price);
-    return value == null ? false : value <= 250;
-  }
-
-  bool _isLowCo2Location(EcoLocation item) {
-    final meta = item.meta.toLowerCase();
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    return tags.contains('train') ||
-        tags.contains('eco') ||
-        tags.contains('budget') ||
-        meta.contains('solar') ||
-        meta.contains('local') ||
-        meta.contains('bike') ||
-        meta.contains('vegan');
-  }
-
-  bool _isNatureLocation(EcoLocation item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    final meta = item.meta.toLowerCase();
-    return tags.any((t) => ['sea', 'lake', 'mountain', 'forest', 'island', 'lodge'].contains(t)) ||
-        meta.contains('sea') ||
-        meta.contains('lake') ||
-        meta.contains('mountain') ||
-        meta.contains('forest');
-  }
-
-  bool _isBeachLocation(EcoLocation item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    final meta = item.meta.toLowerCase();
-    final loc = item.location.toLowerCase();
-    return tags.any((t) => ['sea', 'beach', 'coast', 'island', 'cove'].contains(t)) ||
-        meta.contains('sea') ||
-        meta.contains('beach') ||
-        meta.contains('coast') ||
-        meta.contains('cove') ||
-        loc.contains('beach');
-  }
-
-  bool _isCityLocation(EcoLocation item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    final loc = item.location.toLowerCase();
-    return loc.contains('london') || tags.contains('london') || tags.contains('city') || tags.contains('hostel');
-  }
-
-  bool _isAdventureLocation(EcoLocation item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    final meta = item.meta.toLowerCase();
-    return tags.any((t) => ['mountain', 'forest', 'lake', 'alps', 'outdoor'].contains(t)) ||
-        meta.contains('hike') ||
-        meta.contains('sauna') ||
-        meta.contains('glacier') ||
-        meta.contains('outdoor');
-  }
-
-  bool _isIslandLocation(EcoLocation item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    final loc = item.location.toLowerCase();
-    return tags.contains('island') || tags.contains('bali') || loc.contains('island') || loc.contains('bali');
-  }
-
-  bool _isVeganLocation(EcoLocation item) {
-    final meta = item.meta.toLowerCase();
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    return meta.contains('vegan') || tags.contains('vegan');
-  }
-
-  bool _isLowCo2Activity(ActivityItem item) {
-    final meta = item.meta.toLowerCase();
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    return meta.contains('free') ||
-        tags.contains('outdoor') ||
-        tags.contains('clean-up') ||
-        tags.contains('tree planting') ||
-        tags.contains('forest') ||
-        tags.contains('bike') ||
-        tags.contains('walk');
-  }
-
-  bool _isNatureActivity(ActivityItem item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    return tags.any((t) => ['beach', 'forest', 'outdoor', 'mountain'].contains(t));
-  }
-
-  bool _isBeachActivity(ActivityItem item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    final loc = item.location.toLowerCase();
-    return tags.contains('beach') || loc.contains('beach') || loc.contains('coast') || loc.contains('sea');
-  }
-
-  bool _isCityActivity(ActivityItem item) {
-    final loc = item.location.toLowerCase();
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    return loc.contains('lisbon') || loc.contains('london') || tags.contains('city');
-  }
-
-  bool _isAdventureActivity(ActivityItem item) {
-    final tags = item.tags.map((t) => t.toLowerCase()).toList();
-    return tags.any((t) => ['outdoor', 'forest', 'clean-up', 'tree planting'].contains(t));
-  }
-
-  bool _isIslandActivity(ActivityItem item) {
-    final loc = item.location.toLowerCase();
-    return loc.contains('island') || loc.contains('bali');
-  }
-
-  bool _isVeganActivity(ActivityItem item) {
-    final meta = item.meta.toLowerCase();
-    final title = item.title.toLowerCase();
-    return meta.contains('vegan') || title.contains('vegan');
   }
 
   Future<void> _openSearch(BuildContext context) async {
@@ -285,187 +164,11 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 
   List<EcoLocation> _filterResults() {
-    if (_categoryFilter == _CategoryFilter.activities) return [];
-    final q = _currentQuery.toLowerCase().trim();
-    final baseList = kEcoLocations;
-    final isDefaultQuery = q.isEmpty || q == 'explore' || q.contains('activit');
-
-    final tokens = q.split(RegExp(r'[^a-z0-9]+')).where((t) => t.isNotEmpty).toList();
-
-    bool matches(EcoLocation item) {
-      if (isDefaultQuery) return true;
-      final title = item.title.toLowerCase();
-      final loc = item.location.toLowerCase();
-      final tags = item.tags.map((t) => t.toLowerCase());
-      final tagString = item.tags.map((t) => t.toLowerCase()).join(' ');
-
-      // full query match (either direction)
-      if (title.contains(q) || loc.contains(q) || tagString.contains(q) || q.contains(loc)) {
-        return true;
-      }
-
-      // token match
-      for (final token in tokens) {
-        if (title.contains(token) || loc.contains(token) || tags.any((t) => t.contains(token))) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    final base = baseList.where(matches).toList();
-    final filtered = base
-        .where(_passesLocationFilters)
-        .where((item) => _matchesLocation(item.location))
-        .where(
-          (item) => _matchesEcoTag(
-            tags: item.tags,
-            meta: item.meta,
-            title: item.title,
-          ),
-        )
-        .toList();
-    return _sortLocations(filtered);
+    return _buildFilters().filterLocations(kEcoLocations);
   }
 
   List<ActivityItem> _filterActivities() {
-    if (_categoryFilter == _CategoryFilter.stays) return [];
-    final q = _currentQuery.toLowerCase().trim();
-    final all = kActivities;
-    final isDefaultQuery = q.isEmpty || q == 'explore' || q.contains('activit');
-
-    final tokens = q.split(RegExp(r'[^a-z0-9]+')).where((t) => t.isNotEmpty).toList();
-
-    bool matches(ActivityItem item) {
-      if (isDefaultQuery) return true;
-      final title = item.title.toLowerCase();
-      final loc = item.location.toLowerCase();
-      final tags = item.tags.map((t) => t.toLowerCase());
-      final tagString = item.tags.map((t) => t.toLowerCase()).join(' ');
-      final meta = item.meta.toLowerCase();
-
-      if (title.contains(q) ||
-          loc.contains(q) ||
-          tagString.contains(q) ||
-          q.contains(loc) ||
-          meta.contains(q)) {
-        return true;
-      }
-
-      for (final token in tokens) {
-        if (title.contains(token) ||
-            loc.contains(token) ||
-            tags.any((t) => t.contains(token)) ||
-            meta.contains(token)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    final base = all.where(matches).toList();
-    final filtered = base
-        .where(_passesActivityFilters)
-        .where((item) => _matchesLocation(item.location))
-        .where(
-          (item) => _matchesEcoTag(
-            tags: item.tags,
-            meta: item.meta,
-            title: item.title,
-          ),
-        )
-        .toList();
-    return _sortActivities(filtered);
-  }
-
-  List<EcoLocation> _sortLocations(List<EcoLocation> items) {
-    final list = [...items];
-    switch (_sortOption) {
-      case _SortOption.ratingDesc:
-        list.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case _SortOption.nameAsc:
-        list.sort((a, b) => a.title.compareTo(b.title));
-        break;
-    }
-    return list;
-  }
-
-  List<ActivityItem> _sortActivities(List<ActivityItem> items) {
-    final list = [...items];
-    switch (_sortOption) {
-      case _SortOption.ratingDesc:
-        list.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case _SortOption.nameAsc:
-        list.sort((a, b) => a.title.compareTo(b.title));
-        break;
-    }
-    return list;
-  }
-
-  bool _passesLocationFilters(EcoLocation item) {
-    for (final f in _activeFilters) {
-      switch (f) {
-        case 'low_co2':
-          if (!_isLowCo2Location(item)) return false;
-          break;
-        case 'budget':
-          if (!_isBudgetPrice(item.price)) return false;
-          break;
-        case 'nature':
-          if (!_isNatureLocation(item)) return false;
-          break;
-        case 'beach':
-          if (!_isBeachLocation(item)) return false;
-          break;
-        case 'city':
-          if (!_isCityLocation(item)) return false;
-          break;
-        case 'adventure':
-          if (!_isAdventureLocation(item)) return false;
-          break;
-        case 'island':
-          if (!_isIslandLocation(item)) return false;
-          break;
-        case 'vegan':
-          if (!_isVeganLocation(item)) return false;
-          break;
-      }
-    }
-    return true;
-  }
-
-  bool _passesActivityFilters(ActivityItem item) {
-    for (final f in _activeFilters) {
-      switch (f) {
-        case 'low_co2':
-          if (!_isLowCo2Activity(item)) return false;
-          break;
-        case 'budget':
-          if (!_isBudgetPrice(item.price)) return false;
-          break;
-        case 'nature':
-          if (!_isNatureActivity(item)) return false;
-          break;
-        case 'beach':
-          if (!_isBeachActivity(item)) return false;
-          break;
-        case 'city':
-          if (!_isCityActivity(item)) return false;
-          break;
-        case 'adventure':
-          if (!_isAdventureActivity(item)) return false;
-          break;
-        case 'island':
-          if (!_isIslandActivity(item)) return false;
-          break;
-        case 'vegan':
-          if (!_isVeganActivity(item)) return false;
-          break;
-      }
-    }
-    return true;
+    return _buildFilters().filterActivities(kActivities);
   }
 
   @override
@@ -610,10 +313,10 @@ class _ExplorePageState extends State<ExplorePage> {
                             _FilterMenu(
                               label: 'Category',
                               value: _categoryFilter.label,
-                              items: _CategoryFilter.values.map((e) => e.label).toList(),
+                              items: ExploreCategoryFilter.values.map((e) => e.label).toList(),
                               onSelected: (value) {
                                 setState(() {
-                                  _categoryFilter = _CategoryFilter.values
+                                  _categoryFilter = ExploreCategoryFilter.values
                                       .firstWhere((e) => e.label == value);
                                 });
                               },
@@ -803,6 +506,7 @@ class _ExplorePageState extends State<ExplorePage> {
                                               activity.tags.isNotEmpty ? activity.tags.first : '',
                                           tagSecondary:
                                               activity.tags.length > 1 ? activity.tags[1] : '',
+                                          dateRangePicker: widget.activityDateRangePicker,
                                         ),
                                       ),
                                     );
@@ -886,34 +590,6 @@ class _FilterOption {
   const _FilterOption({required this.id, required this.label});
 }
 
-enum _CategoryFilter { all, stays, activities }
-
-extension _CategoryFilterLabel on _CategoryFilter {
-  String get label {
-    switch (this) {
-      case _CategoryFilter.all:
-        return 'All';
-      case _CategoryFilter.stays:
-        return 'Stays';
-      case _CategoryFilter.activities:
-        return 'Activities';
-    }
-  }
-}
-
-enum _SortOption { ratingDesc, nameAsc }
-
-extension _SortOptionLabel on _SortOption {
-  String get label {
-    switch (this) {
-      case _SortOption.ratingDesc:
-        return 'Rating';
-      case _SortOption.nameAsc:
-        return 'Name A-Z';
-    }
-  }
-}
-
 class _FilterMenu extends StatelessWidget {
   final String label;
   final String value;
@@ -949,8 +625,8 @@ class _FilterMenu extends StatelessWidget {
 }
 
 class _SortMenu extends StatelessWidget {
-  final _SortOption value;
-  final ValueChanged<_SortOption> onSelected;
+  final ExploreSortOption value;
+  final ValueChanged<ExploreSortOption> onSelected;
   const _SortMenu({
     required this.value,
     required this.onSelected,
@@ -958,12 +634,12 @@ class _SortMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<_SortOption>(
+    return PopupMenuButton<ExploreSortOption>(
       onSelected: onSelected,
       itemBuilder: (context) {
-        return _SortOption.values
+        return ExploreSortOption.values
             .map(
-              (option) => PopupMenuItem<_SortOption>(
+              (option) => PopupMenuItem<ExploreSortOption>(
                 value: option,
                 child: Text(option.label),
               ),
@@ -992,8 +668,11 @@ class _FilterPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 4,
         children: [
           Text(
             label,
@@ -1004,7 +683,6 @@ class _FilterPill extends StatelessWidget {
               letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(width: 6),
           Text(
             value,
             style: const TextStyle(
@@ -1012,7 +690,6 @@ class _FilterPill extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(width: 6),
           const Icon(Icons.expand_more, color: Colors.white70, size: 18),
         ],
       ),

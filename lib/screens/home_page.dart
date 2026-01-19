@@ -430,7 +430,7 @@ class _HomePageState extends State<HomePage> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: kCategories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final category = kCategories[index];
               return CategoryPill(

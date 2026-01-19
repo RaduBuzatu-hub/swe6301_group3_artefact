@@ -3,10 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'sign_up_page.dart';
 import '../data/local_db.dart';
+import '../utils/auth_helpers.dart';
 
 /// Email/password sign-in flow; on success seeds a local profile if missing.
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+  final FirebaseAuth? auth;
+  const SignInPage({super.key, this.auth});
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -16,8 +18,10 @@ class _SignInPageState extends State<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
-  bool _loading = false;
-  bool _resetting = false;
+  AuthProcessState _signInState = const AuthProcessState.idle();
+  AuthProcessState _resetState = const AuthProcessState.idle();
+
+  FirebaseAuth get _auth => widget.auth ?? FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -112,8 +116,8 @@ class _SignInPageState extends State<SignInPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: _resetting ? null : _sendPasswordReset,
-                              child: _resetting
+                              onPressed: _resetState.isLoading ? null : _sendPasswordReset,
+                              child: _resetState.isLoading
                                   ? const SizedBox(
                                       height: 16,
                                       width: 16,
@@ -143,8 +147,8 @@ class _SignInPageState extends State<SignInPage> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              onPressed: _loading ? null : _signIn,
-                              child: _loading
+                              onPressed: _signInState.isLoading ? null : _signIn,
+                              child: _signInState.isLoading
                                   ? const SizedBox(
                                       height: 20,
                                       width: 20,
@@ -157,28 +161,33 @@ class _SignInPageState extends State<SignInPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Don't have an account? ",
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const SignUpPage()),
-                                  );
-                                },
-                                child: const Text(
-                                  'Register',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
+                          Center(
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: [
+                                const Text(
+                                  "Don't have an account?",
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => const SignUpPage()),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Register',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -234,82 +243,128 @@ class _SignInPageState extends State<SignInPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showMessage('Please enter email and password.');
+    final validationMessage = AuthInputValidator.validateEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (validationMessage != null) {
+      if (mounted) {
+        setState(() {
+          _signInState = AuthProcessReducer.reduce(
+            _signInState,
+            AuthProcessEvent.failure(validationMessage),
+          );
+        });
+      }
+      _showMessage(validationMessage);
       return;
     }
 
-    setState(() => _loading = true);
+    if (mounted) {
+      setState(() {
+        _signInState = AuthProcessReducer.reduce(
+          _signInState,
+          const AuthProcessEvent.start(),
+        );
+      });
+    }
     try {
-      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final cred = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       await _ensureLocalProfile(cred.user);
-      if (mounted) Navigator.of(context).maybePop();
+      if (mounted) {
+        setState(() {
+          _signInState = AuthProcessReducer.reduce(
+            _signInState,
+            const AuthProcessEvent.success(),
+          );
+        });
+        Navigator.of(context).maybePop();
+      }
     } on FirebaseAuthException catch (e) {
-      _showMessage(_messageForCode(e.code));
+      final message = AuthErrorMapper.signInMessage(e.code);
+      if (mounted) {
+        setState(() {
+          _signInState = AuthProcessReducer.reduce(
+            _signInState,
+            AuthProcessEvent.failure(message),
+          );
+        });
+      }
+      _showMessage(message);
     } catch (_) {
-      _showMessage('Something went wrong. Please try again.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      const message = 'Something went wrong. Please try again.';
+      if (mounted) {
+        setState(() {
+          _signInState = AuthProcessReducer.reduce(
+            _signInState,
+            const AuthProcessEvent.failure(message),
+          );
+        });
+      }
+      _showMessage(message);
     }
   }
 
   Future<void> _sendPasswordReset() async {
     final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      _showMessage('Enter your email to receive a reset link.');
+    final validationMessage = AuthInputValidator.validateResetEmail(email);
+    if (validationMessage != null) {
+      if (mounted) {
+        setState(() {
+          _resetState = AuthProcessReducer.reduce(
+            _resetState,
+            AuthProcessEvent.failure(validationMessage),
+          );
+        });
+      }
+      _showMessage(validationMessage);
       return;
     }
 
-    setState(() => _resetting = true);
+    if (mounted) {
+      setState(() {
+        _resetState = AuthProcessReducer.reduce(
+          _resetState,
+          const AuthProcessEvent.start(),
+        );
+      });
+    }
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await _auth.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        setState(() {
+          _resetState = AuthProcessReducer.reduce(
+            _resetState,
+            const AuthProcessEvent.success(),
+          );
+        });
+      }
       _showMessage('If an account exists, a reset link was sent.');
     } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'invalid-email':
-          _showMessage('That email looks invalid.');
-          break;
-        case 'user-not-found':
-          _showMessage('If an account exists, a reset link was sent.');
-          break;
-        case 'too-many-requests':
-          _showMessage('Too many attempts. Try again later.');
-          break;
-        case 'network-request-failed':
-          _showMessage('No network connection. Check your internet and try again.');
-          break;
-        default:
-          _showMessage('Unable to send reset email right now.');
+      final message = AuthErrorMapper.resetMessage(e.code);
+      if (mounted) {
+        setState(() {
+          _resetState = AuthProcessReducer.reduce(
+            _resetState,
+            AuthProcessEvent.failure(message),
+          );
+        });
       }
+      _showMessage(message);
     } catch (_) {
-      _showMessage('Unable to send reset email right now.');
-    } finally {
-      if (mounted) setState(() => _resetting = false);
-    }
-  }
-
-  String _messageForCode(String code) {
-    switch (code) {
-      case 'invalid-email':
-        return 'That email looks invalid.';
-      case 'user-disabled':
-        return 'This account is disabled.';
-      case 'user-not-found':
-      case 'wrong-password':
-        return 'Incorrect email or password.';
-      case 'too-many-requests':
-        return 'Too many attempts. Try again later.';
-      case 'operation-not-allowed':
-        return 'Email/password sign-in is disabled for this project.';
-      case 'invalid-credential':
-        return 'The email or password is incorrect.';
-      case 'network-request-failed':
-        return 'No network connection. Check your internet and try again.';
-      default:
-        return 'Unable to sign in right now.';
+      const message = 'Unable to send reset email right now.';
+      if (mounted) {
+        setState(() {
+          _resetState = AuthProcessReducer.reduce(
+            _resetState,
+            const AuthProcessEvent.failure(message),
+          );
+        });
+      }
+      _showMessage(message);
     }
   }
 

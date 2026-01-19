@@ -122,10 +122,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         const SnackBar(content: Text('Unable to add admin right now.')),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isAdding = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isAdding = false;
+        });
+      }
     }
   }
 
@@ -182,10 +183,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         const SnackBar(content: Text('Unable to cancel booking right now.')),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _cancellingBookings.remove(docId);
-      });
+      if (mounted) {
+        setState(() {
+          _cancellingBookings.remove(docId);
+        });
+      }
     }
   }
 

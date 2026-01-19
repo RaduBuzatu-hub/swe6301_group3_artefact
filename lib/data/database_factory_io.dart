@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
-import 'package:sqflite/sqflite.dart' show databaseFactory;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void initDatabaseFactory() {
