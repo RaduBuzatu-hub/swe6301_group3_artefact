@@ -78,7 +78,7 @@ const List<EcoLocation> kEcoLocations = [
     meta: 'Clifftop views · Private cove',
     price: '£150 / night',
     imageUrl:
-        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&w=1200&q=80',
+        'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80',
     tags: ['cornwall', 'sea', 'escape'],
     rating: 4.5,
   ),

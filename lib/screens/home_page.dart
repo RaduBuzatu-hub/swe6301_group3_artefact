@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> {
       location: 'Online',
       tagPrimary: 'Online',
       tagSecondary: '2 hrs',
-      assetPath: 'lib/screens/assets/beach_clean_up.png',
+      assetPath: 'lib/screens/assets/eco_cooking_workshop.jpeg',
       priceDisplay: 'Free',
     ),
   ];

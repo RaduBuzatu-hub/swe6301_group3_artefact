@@ -56,7 +56,7 @@ const List<ActivityItem> kActivities = [
     location: 'Online',
     meta: 'Workshop · 2 hrs',
     price: 'Free',
-    assetPath: 'lib/screens/assets/beach_clean_up.png',
+    assetPath: 'lib/screens/assets/eco_cooking_workshop.jpeg',
     tags: ['workshop', 'online', 'virtual'],
     rating: 4.1,
   ),

@@ -74,6 +74,7 @@ flutter:
     - lib/screens/assets/seaside_photo.jpeg
     - lib/screens/assets/forest_replanting.png
     - lib/screens/assets/island_hideaway.jpeg
+    - lib/screens/assets/eco_cooking_workshop.jpeg
     - lib/screens/assets/mountain_retreat.jpeg
     - lib/screens/assets/logo.png
 
