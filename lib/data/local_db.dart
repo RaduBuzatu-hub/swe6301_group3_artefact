@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+/// Local SQLite persistence for profiles, trips, and saved activities.
+
 /// Simple profile model persisted in the local SQLite DB.
 class LocalProfile {
   final String uid;
@@ -79,6 +81,7 @@ class LocalProfile {
 }
 
 /// Handles on-device persistence only (no cloud writes).
+/// Uses a singleton for shared access across screens and tests.
 class LocalDb {
   LocalDb._();
   static final LocalDb instance = LocalDb._();
@@ -195,6 +198,7 @@ class LocalDb {
     );
   }
 
+  /// Fetch a profile row for [uid].
   Future<LocalProfile?> getProfile(String uid) async {
     final db = _db;
     if (db == null) return null;
@@ -208,6 +212,7 @@ class LocalDb {
     return LocalProfile.fromMap(rows.first);
   }
 
+  /// Insert or update a profile row.
   Future<void> upsertProfile(LocalProfile profile) async {
     final db = _db;
     if (db == null) return;
@@ -235,6 +240,7 @@ class LocalDb {
     );
   }
 
+  /// Delete a saved activity row for a user/location pair.
   Future<void> deleteSavedActivity({
     required String uid,
     required String title,
@@ -250,6 +256,7 @@ class LocalDb {
     );
   }
 
+  /// Delete a booked trip row for a user/location pair.
   Future<void> deleteTrip({
     required String uid,
     required String title,
@@ -265,6 +272,7 @@ class LocalDb {
     );
   }
 
+  /// List saved or booked trips for [uid].
   Future<List<Map<String, dynamic>>> getTrips({
     required String uid,
     required bool saved,

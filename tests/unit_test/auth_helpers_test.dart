@@ -1,7 +1,9 @@
+/// Unit tests for auth input validation, error mapping, and reducer states.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swe6301_group3_artefact/utils/auth_helpers.dart';
 
 void main() {
+  // Input validation rules for email/password and reset flow.
   group('AuthInputValidator', () {
     test('blocks empty email or password', () {
       final message = AuthInputValidator.validateEmailAndPassword(
@@ -50,6 +52,7 @@ void main() {
     });
   });
 
+  // Error code mapping to human-friendly messages.
   group('AuthErrorMapper', () {
     test('maps sign-in error codes', () {
       expect(AuthErrorMapper.signInMessage('invalid-email'), 'That email looks invalid.');
@@ -87,8 +90,10 @@ void main() {
     });
   });
 
+  // Reducer transitions for loading/success/error/reset states.
   group('AuthProcessReducer', () {
     test('transitions through loading, success, error, and reset', () {
+      // Exercise state transitions to ensure flags and messages are consistent.
       const idle = AuthProcessState.idle();
 
       final loading = AuthProcessReducer.reduce(

@@ -8,6 +8,9 @@ import '../utils/explore_filters.dart';
 import 'activity_detail_page.dart';
 
 /// Explore destinations/activities; supports search query, saved/booked toggles, and filters.
+/// - Combines stay and activity data into a single filterable experience.
+/// - Offers location, tag, and sort menus with quick chips.
+/// - Navigates to stay/activity detail screens and returns selections.
 class ExplorePage extends StatefulWidget {
   final String? query;
   final Set<String> savedKeys;
@@ -39,13 +42,19 @@ class ExplorePage extends StatefulWidget {
 }
 
 class _ExplorePageState extends State<ExplorePage> {
+  // Current query string shown in the search pill.
   late String _currentQuery;
+  // Active filter ids used by the chip row.
   final Set<String> _activeFilters = {};
+  // High-level category selection for stays vs activities.
   ExploreCategoryFilter _categoryFilter = ExploreCategoryFilter.all;
+  // Selected location and eco tag from menus.
   String _selectedLocation = 'Anywhere';
   String _selectedEcoTag = 'Any tag';
+  // Selected sort option for results.
   ExploreSortOption _sortOption = ExploreSortOption.ratingDesc;
 
+  // Definition list for the horizontal filter chip row.
   static const List<_FilterOption> _filterOptions = [
     _FilterOption(id: 'low_co2', label: 'Low CO₂ only'),
     _FilterOption(id: 'budget', label: '≤ GBP250'),
@@ -60,6 +69,7 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   void initState() {
     super.initState();
+    // Apply incoming query and any category presets.
     final incoming = (widget.query ?? '').trim();
     if (!_applyCategoryPreset(incoming)) {
       _currentQuery = incoming.isEmpty ? 'Explore' : incoming;
@@ -69,6 +79,7 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   void didUpdateWidget(covariant ExplorePage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Update state when the parent query changes.
     final incoming = (widget.query ?? '').trim();
     final previous = (oldWidget.query ?? '').trim();
     if (incoming != previous) {
@@ -78,9 +89,11 @@ class _ExplorePageState extends State<ExplorePage> {
     }
   }
 
+  // Lowercased composite key to compare locations in saved/booked sets.
   String _locationKey(EcoLocation item) =>
       '${item.title.toLowerCase()}|${item.location.toLowerCase()}';
 
+  // Build a sorted list of unique location labels for the filter menu.
   List<String> get _locationOptions {
     final options = <String>{};
     for (final location in kEcoLocations) {
@@ -94,6 +107,7 @@ class _ExplorePageState extends State<ExplorePage> {
     return ['Anywhere', ...list];
   }
 
+  // Build a sorted list of unique eco tags for the filter menu.
   List<String> get _ecoTagOptions {
     final options = <String>{};
     for (final location in kEcoLocations) {
@@ -107,6 +121,7 @@ class _ExplorePageState extends State<ExplorePage> {
     return ['Any tag', ...list];
   }
 
+  // Construct the ExploreFilters object used to filter both lists.
   ExploreFilters _buildFilters() {
     return ExploreFilters(
       currentQuery: _currentQuery,
@@ -118,6 +133,7 @@ class _ExplorePageState extends State<ExplorePage> {
     );
   }
 
+  // Reset all filter state back to defaults.
   void _resetFilters() {
     _currentQuery = 'Explore';
     _activeFilters.clear();
@@ -127,6 +143,7 @@ class _ExplorePageState extends State<ExplorePage> {
     _sortOption = ExploreSortOption.ratingDesc;
   }
 
+  // Apply special query presets (e.g., "activities") to filter state.
   bool _applyCategoryPreset(String? query) {
     final normalized = (query ?? '').trim().toLowerCase();
     if (normalized.isEmpty) return false;
@@ -151,6 +168,7 @@ class _ExplorePageState extends State<ExplorePage> {
     return false;
   }
 
+  // Open the search page and update the current query.
   Future<void> _openSearch(BuildContext context) async {
     final result = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const SearchPage()),
@@ -163,10 +181,12 @@ class _ExplorePageState extends State<ExplorePage> {
     }
   }
 
+  // Apply current filters to stay locations.
   List<EcoLocation> _filterResults() {
     return _buildFilters().filterLocations(kEcoLocations);
   }
 
+  // Apply current filters to activities.
   List<ActivityItem> _filterActivities() {
     return _buildFilters().filterActivities(kActivities);
   }
@@ -256,6 +276,7 @@ class _ExplorePageState extends State<ExplorePage> {
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
                     children: [
+                      // Search pill opens the full SearchPage.
                       GestureDetector(
                         onTap: () => _openSearch(context),
                         child: Container(
@@ -300,6 +321,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      // Dropdown menus for category, location, eco tag, and sort.
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
@@ -353,6 +375,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      // Horizontal chip row for quick filter toggles.
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
@@ -384,6 +407,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      // Empty state when nothing matches filters.
                       if (totalResults == 0)
                         _EmptyResults(
                           onClear: () {
@@ -393,6 +417,7 @@ class _ExplorePageState extends State<ExplorePage> {
                           },
                         ),
                       if (totalResults == 0) const SizedBox(height: 16),
+                      // Featured full-width result card.
                       if (filteredLocations.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -428,6 +453,7 @@ class _ExplorePageState extends State<ExplorePage> {
                             },
                           ),
                         ),
+                      // Remaining location cards rendered in a grid.
                       if (filteredLocations.length > 1)
                         Wrap(
                           spacing: 12,
@@ -478,6 +504,7 @@ class _ExplorePageState extends State<ExplorePage> {
                           ),
                         ),
                         const SizedBox(height: 10),
+                        // Activity cards rendered in a grid.
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
@@ -531,6 +558,7 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 }
 
+/// Toggleable chip used in the horizontal filter row.
 class _SelectableFilterChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -584,12 +612,14 @@ class _SelectableFilterChip extends StatelessWidget {
   }
 }
 
+/// Data holder for a filter option id + label.
 class _FilterOption {
   final String id;
   final String label;
   const _FilterOption({required this.id, required this.label});
 }
 
+/// Popup menu wrapper used for category/location/tag filters.
 class _FilterMenu extends StatelessWidget {
   final String label;
   final String value;
@@ -624,6 +654,7 @@ class _FilterMenu extends StatelessWidget {
   }
 }
 
+/// Popup menu wrapper for sort options.
 class _SortMenu extends StatelessWidget {
   final ExploreSortOption value;
   final ValueChanged<ExploreSortOption> onSelected;
@@ -654,6 +685,7 @@ class _SortMenu extends StatelessWidget {
   }
 }
 
+/// Pill-style label used by filter menus.
 class _FilterPill extends StatelessWidget {
   final String label;
   final String value;
@@ -697,6 +729,7 @@ class _FilterPill extends StatelessWidget {
   }
 }
 
+/// Empty state shown when filters return no results.
 class _EmptyResults extends StatelessWidget {
   final VoidCallback onClear;
   const _EmptyResults({required this.onClear});
@@ -749,6 +782,7 @@ class _EmptyResults extends StatelessWidget {
   }
 }
 
+/// Card rendering for a single stay/location result.
 class _ResultCard extends StatelessWidget {
   final EcoLocation item;
   final bool isFullWidth;
@@ -873,6 +907,7 @@ class _ResultCard extends StatelessWidget {
   }
 }
 
+/// Card rendering for a single activity result.
 class _ActivityCard extends StatelessWidget {
   final ActivityItem item;
   final VoidCallback onOpenDetail;
@@ -984,6 +1019,7 @@ class _ActivityCard extends StatelessWidget {
   }
 }
 
+/// Small badge used on images for category/tag.
 class _Badge extends StatelessWidget {
   final String label;
   const _Badge({required this.label});
@@ -1007,6 +1043,7 @@ class _Badge extends StatelessWidget {
   }
 }
 
+/// Small text pill used for meta and price labels.
 class _MetaBullet extends StatelessWidget {
   final String text;
   const _MetaBullet({required this.text});

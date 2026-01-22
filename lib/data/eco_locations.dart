@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Seed data and model for eco-friendly stay locations.
+
 @immutable
+/// Immutable model representing a stay/location in Explore and detail screens.
 class EcoLocation {
   final String title;
   final String location;
@@ -21,6 +24,7 @@ class EcoLocation {
   });
 }
 
+/// Static list of demo locations used by Explore and Home screens.
 const List<EcoLocation> kEcoLocations = [
   EcoLocation(
     title: 'Thames Eco Stay',

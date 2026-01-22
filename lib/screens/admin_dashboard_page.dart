@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_styles.dart';
 
+/// Admin dashboard for metrics, admin management, and bookings oversight.
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
 
@@ -13,7 +14,9 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final _uidController = TextEditingController();
   final _emailController = TextEditingController();
+  // Future for dashboard metrics; reused between refreshes.
   Future<_AdminMetrics>? _metricsFuture;
+  // Track in-flight admin add and booking cancel operations.
   bool _isAdding = false;
   final Set<String> _cancellingBookings = {};
 
@@ -25,6 +28,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<_AdminMetrics> _fetchMetrics() async {
+    // Read counts and paid bookings to build the dashboard snapshot.
     final walletsSnapshot = await FirebaseFirestore.instance.collection('wallets').get();
     final adminsSnapshot = await FirebaseFirestore.instance.collection('admins').get();
     final bookingsSnapshot = await FirebaseFirestore.instance.collection('bookings').get();
@@ -74,6 +78,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> _refreshMetrics() async {
+    // Trigger a refresh and await completion for pull-to-refresh.
     setState(() {
       _metricsFuture = _fetchMetrics();
     });
@@ -81,6 +86,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> _addAdmin() async {
+    // Add a user to the admins collection.
     final uid = _uidController.text.trim();
     final email = _emailController.text.trim();
     if (uid.isEmpty) {
@@ -131,6 +137,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> _cancelBooking(_AdminBooking booking) async {
+    // Mark a paid booking as cancelled for admin tracking.
     if (booking.status != 'paid') return;
     final docId = booking.docId;
     if (docId == null || docId.isEmpty) return;
@@ -192,6 +199,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildShell({required Widget child, bool refreshable = false}) {
+    // Shared scaffold/gradient wrapper used for all states.
     final scrollView = SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: AppSpacing.page,
@@ -259,6 +267,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildMetricsCard() {
+    // Lazily load metrics and display summary + booking list.
     _metricsFuture ??= _fetchMetrics();
     return _SectionCard(
       title: 'Metrics',
@@ -368,6 +377,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildAddAdminCard(User user) {
+    // Admin creation form with UID/email inputs.
     return _SectionCard(
       title: 'Add administrator',
       child: Column(
@@ -462,6 +472,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildAdminList() {
+    // Live list of admins from Firestore.
     return _SectionCard(
       title: 'Administrators',
       child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -550,6 +561,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 }
 
+/// Simple label/value row used in the metrics summary.
 class _MetricRow extends StatelessWidget {
   final String label;
   final String value;
@@ -574,6 +586,7 @@ class _MetricRow extends StatelessWidget {
   }
 }
 
+/// Row rendering for a single booking entry with cancel action.
 class _BookingRow extends StatelessWidget {
   final _AdminBooking booking;
   final bool isCancelling;
@@ -668,6 +681,7 @@ class _BookingRow extends StatelessWidget {
   }
 }
 
+/// Row rendering for a single admin entry.
 class _AdminRow extends StatelessWidget {
   final Map<String, dynamic> data;
   const _AdminRow({required this.data});
@@ -730,6 +744,7 @@ class _AdminRow extends StatelessWidget {
   }
 }
 
+/// Card shell used for each admin dashboard section.
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
@@ -771,6 +786,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
+/// Snapshot of metrics returned from Firestore.
 class _AdminMetrics {
   final int adminCount;
   final int walletCount;
@@ -793,6 +809,7 @@ class _AdminMetrics {
   });
 }
 
+/// Booking metadata displayed in the admin list.
 class _AdminBooking {
   final String? docId;
   final String title;

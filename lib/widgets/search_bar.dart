@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 
-/// Home search bar is tappable-only (readOnly) so tests can tap the key and assert navigation.
+/// Home search bar that behaves like a button rather than an editable field.
+/// - When [onTap] is provided, the field is read-only and triggers navigation.
+/// - Uses a stable key so tests can locate and tap it.
 class HomeSearchBar extends StatelessWidget {
   final VoidCallback? onTap;
   const HomeSearchBar({super.key, this.onTap});
@@ -10,6 +12,7 @@ class HomeSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       key: const Key('searchBar.input'),
+      // Make the field act like a tappable shortcut when onTap is set.
       readOnly: onTap != null,
       onTap: onTap,
       style: const TextStyle(

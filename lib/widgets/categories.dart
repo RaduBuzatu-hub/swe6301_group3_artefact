@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 
 /// Simple data holder for a category name and icon.
+/// Used by the home category rail and filter taps.
 class CategoryItem {
   final String label;
   final IconData icon;
   const CategoryItem({required this.label, required this.icon});
 }
 
+/// Default category list shown on the home screen.
 const List<CategoryItem> kCategories = [
   CategoryItem(label: 'Eco Stays', icon: Icons.home_work),
   CategoryItem(label: 'Local Tours', icon: Icons.location_on),
@@ -16,6 +18,7 @@ const List<CategoryItem> kCategories = [
 ];
 
 /// Displays a tappable pill for a given [CategoryItem].
+/// Highlights itself when [selected] is true and forwards [onTap].
 class CategoryPill extends StatelessWidget {
   final CategoryItem category;
   final double width;
@@ -33,6 +36,7 @@ class CategoryPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Selected state uses a stronger background and border.
     final baseColor = Colors.white.withValues(alpha: selected ? 0.24 : 0.12);
     return InkWell(
       onTap: onTap,

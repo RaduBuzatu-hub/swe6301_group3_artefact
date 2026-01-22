@@ -1,3 +1,4 @@
+/// Happy-path E2E flow: sign in, browse, book, and confirm an activity.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ void main() {
       mockUser: MockUser(uid: 'e2e-user', email: 'e2e@example.com'),
     );
 
+    // Fix viewport size to keep layout and hit targets deterministic.
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -27,11 +29,13 @@ void main() {
     await tester.pumpWidget(_E2EApp(auth: auth));
     await tester.pumpAndSettle();
 
+    // Sign in through the auth gate.
     await tester.enterText(find.byType(TextField).at(0), 'e2e@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'password123');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
     await tester.pumpAndSettle();
 
+    // Verify explore landing content appears.
     expect(find.text('Explore'), findsWidgets);
     expect(find.text('Activities & events'), findsWidgets);
 
@@ -44,6 +48,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ActivityDetailPage), findsOneWidget);
 
+    // Confirm details and join the activity.
     expect(find.text(activityTitle), findsOneWidget);
     expect(find.text(activityLocation), findsOneWidget);
     final joinButtonText = find.descendant(
@@ -55,6 +60,7 @@ void main() {
     await tester.tap(joinButtonText);
     await tester.pumpAndSettle();
 
+    // Confirmation screen is rendered with trip details.
     expect(find.text('Booking confirmed'), findsOneWidget);
     expect(find.text(activityTitle), findsOneWidget);
     expect(find.text(activityLocation), findsOneWidget);
@@ -106,6 +112,7 @@ class _ExploreFlowState extends State<_ExploreFlow> {
   static const _activityLocation = 'Falmouth Beach, Cornwall';
 
   TripEntry _buildActivityEntry() {
+    // Pre-canned TripEntry used for the test detail page.
     return const TripEntry(
       title: _activityTitle,
       subtitle: _activityLocation,
@@ -119,6 +126,7 @@ class _ExploreFlowState extends State<_ExploreFlow> {
   }
 
   void _handleJoinTrip(TripEntry trip) {
+    // Route to confirmation when the activity is joined.
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _ConfirmationPage(trip: trip),
@@ -147,6 +155,7 @@ class _ExploreFlowState extends State<_ExploreFlow> {
           child: FilledButton(
             key: const Key('e2e.openActivity'),
             onPressed: () {
+              // Provide a direct path to the detail page for the test flow.
               _openActivityDetail(entry);
             },
             child: const Text('Open activity detail'),
@@ -157,6 +166,7 @@ class _ExploreFlowState extends State<_ExploreFlow> {
   }
 
   Future<void> _openActivityDetail(TripEntry entry) async {
+    // Navigate to detail, then forward the result to confirmation.
     final result = await Navigator.of(context).push<TripEntry>(
       MaterialPageRoute(
         builder: (_) => ActivityDetailPage(

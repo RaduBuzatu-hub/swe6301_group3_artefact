@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// Lightweight list of search results rendered as cards.
+/// Lightweight search results screen rendered as cards.
+/// - Uses a static list of demo results for the UI.
+/// - Surfaces quick filter chips at the top of the list.
+/// - Shows a network image per item with a fallback.
 class ExploreResultsPage extends StatelessWidget {
   final String query;
   ExploreResultsPage({super.key, required String query})
       : query = query.isEmpty ? 'Explore' : query;
 
+  // Static seed data to keep the screen deterministic in demos/tests.
   final List<_ResultItem> _results = const [
     _ResultItem(
       title: 'Thames Eco Stay',
@@ -92,6 +96,7 @@ class ExploreResultsPage extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
+              // Filter chips row (non-interactive placeholder in this demo).
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -115,6 +120,7 @@ class ExploreResultsPage extends StatelessWidget {
                   itemCount: _results.length,
                   itemBuilder: (context, index) {
                     final item = _results[index];
+                    // Render each result as a card with image + metadata.
                     return _ResultCard(item: item);
                   },
                 ),
@@ -127,6 +133,7 @@ class ExploreResultsPage extends StatelessWidget {
   }
 }
 
+/// Simple pill-style filter chip used in the header row.
 class _FilterChip extends StatelessWidget {
   final String label;
   const _FilterChip({required this.label});
@@ -150,6 +157,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+/// Data model for a single search result card.
 class _ResultItem {
   final String title;
   final String location;
@@ -165,6 +173,7 @@ class _ResultItem {
   });
 }
 
+/// Card UI for a single search result.
 class _ResultCard extends StatelessWidget {
   final _ResultItem item;
   const _ResultCard({required this.item});
@@ -194,6 +203,7 @@ class _ResultCard extends StatelessWidget {
               child: Image.network(
                 item.imageUrl,
                 fit: BoxFit.cover,
+                // Provide a local fallback icon when the image fails to load.
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey.shade200,
                   child: const Icon(Icons.landscape, size: 48, color: Colors.grey),

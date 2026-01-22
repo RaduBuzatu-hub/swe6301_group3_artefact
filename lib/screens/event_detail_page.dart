@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../utils/available_dates.dart';
 
 /// Detail page for a single event; invokes [onJoin] when user taps Join.
+/// - Uses the available date range picker to choose dates.
+/// - Presents key details, meeting point, and impact summary.
 class EventDetailPage extends StatelessWidget {
   final ValueChanged<DateTimeRange>? onJoin;
   const EventDetailPage({super.key, this.onJoin});
 
+  // Small bullet list row used in the "What you'll do" section.
   Widget _bullet(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -24,6 +27,7 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
+  // Show the date range picker and pass the selection upstream.
   Future<void> _handleJoin(BuildContext context) async {
     final availableDates = buildAvailableDates(
       seed: 'beach-clean-up-falmouth',
@@ -42,6 +46,7 @@ class EventDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Local text styles for consistent typography.
     final titleStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
           color: const Color(0xFF2E2A68),
           fontWeight: FontWeight.w800,
@@ -66,6 +71,7 @@ class EventDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Hero image for the event.
             AspectRatio(
               aspectRatio: 16 / 9,
               child: Image.asset(
@@ -78,12 +84,14 @@ class EventDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title and basic metadata.
                   Text('Coastal Clean-Up Experience', style: titleStyle),
                   const SizedBox(height: 8),
                   Text('Falmouth Beach, Cornwall', style: bodyStyle),
                   const SizedBox(height: 4),
                   Text('Free - 3-hour session', style: bodyStyle),
                   const SizedBox(height: 20),
+                  // Two-column detail layout for logistics.
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -154,12 +162,14 @@ class EventDetailPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
+                  // Description bullets.
                   Text('What you\'ll do', style: labelStyle),
                   const SizedBox(height: 10),
                   _bullet('Collect litter along the shoreline.'),
                   _bullet('Separate recycling and waste.'),
                   _bullet('Short intro on ocean plastics.'),
                   const SizedBox(height: 24),
+                  // Primary join CTA.
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

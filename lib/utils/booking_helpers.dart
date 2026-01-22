@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import '../models/trip_entry.dart';
 import 'available_dates.dart';
 
+/// Booking helpers for day keys, validation, slot math, and ledger updates.
+
+/// Stable integer key for a calendar day (YYYYMMDD).
 int bookingDayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
 
+/// Build a set of valid day keys from available dates.
 Set<int> buildAllowedDayKeys(List<DateTime> availableDates) {
   return availableDates.map((date) => bookingDayKey(dateOnly(date))).toSet();
 }
 
+/// Validation rules for stay and activity bookings.
 class BookingValidator {
   static String? validateRequiredFields({
     required String title,
@@ -72,6 +77,7 @@ class BookingValidator {
   }
 }
 
+/// Result object returned when reserving or releasing slots.
 class BookingSlotUpdate {
   final int available;
   final String? error;
@@ -81,6 +87,7 @@ class BookingSlotUpdate {
   bool get isValid => error == null;
 }
 
+/// Slot inventory helpers for reserve/release flows.
 class BookingSlots {
   static BookingSlotUpdate reserve({
     required int available,
@@ -119,6 +126,7 @@ class BookingSlots {
   }
 }
 
+/// In-memory booking list that ensures unique trip keys.
 class BookingLedger {
   final List<TripEntry> trips;
   final List<TripEntry> saved;
@@ -129,6 +137,7 @@ class BookingLedger {
   });
 
   BookingLedger book(TripEntry trip) {
+    // Add to booked list and remove any matching saved item.
     final key = _tripKey(trip.title, trip.location);
     final nextTrips = [...trips];
     final exists = nextTrips.any((t) => _tripKey(t.title, t.location) == key);
@@ -144,12 +153,14 @@ class BookingLedger {
     required String title,
     required String location,
   }) {
+    // Remove a booked trip while leaving saved entries untouched.
     final key = _tripKey(title, location);
     final nextTrips =
         trips.where((t) => _tripKey(t.title, t.location) != key).toList();
     return BookingLedger(trips: nextTrips, saved: [...saved]);
   }
 
+  // Lowercased composite key for title + location.
   String _tripKey(String title, String location) =>
       '${title.toLowerCase()}|${location.toLowerCase()}';
 }

@@ -3,15 +3,21 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+/// Date utilities for booking flows and availability-based pickers.
+
+/// Stable integer key for a calendar day (YYYYMMDD).
 int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
 
+/// Normalize a DateTime to midnight (date-only).
 DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
+/// Calculate inclusive nights for a date range (minimum 1 night).
 int calculateNights(DateTime start, DateTime end) {
   final nights = dateOnly(end).difference(dateOnly(start)).inDays;
   return nights <= 0 ? 1 : nights;
 }
 
+/// Build a deterministic list of available dates from a seed.
 List<DateTime> buildAvailableDates({
   required String seed,
   int count = 8,
@@ -22,6 +28,7 @@ List<DateTime> buildAvailableDates({
   final random = Random(seed.hashCode);
   final offsets = <int>{};
   var attempts = 0;
+  // Create a few short contiguous blocks to simulate availability windows.
   while (offsets.length < count && attempts < count * 10) {
     final blockStart = random.nextInt(max(2, adjustedRange - 3));
     final blockLength = 2 + random.nextInt(3); // 2-4 day stretches
@@ -38,6 +45,7 @@ List<DateTime> buildAvailableDates({
   return dates;
 }
 
+/// Date picker limited to [availableDates].
 Future<DateTime?> showAvailableDatePicker({
   required BuildContext context,
   required List<DateTime> availableDates,
@@ -57,10 +65,12 @@ Future<DateTime?> showAvailableDatePicker({
     firstDate: firstDate,
     lastDate: lastDate,
     helpText: helpText,
+    // Disable days outside the available set.
     selectableDayPredicate: (day) => allowedDays.contains(_dayKey(day)),
   );
 }
 
+/// Check if every day in [range] exists in [allowedDays].
 bool isRangeAvailable(DateTimeRange range, Set<int> allowedDays) {
   var cursor = dateOnly(range.start);
   final end = dateOnly(range.end);
@@ -73,6 +83,7 @@ bool isRangeAvailable(DateTimeRange range, Set<int> allowedDays) {
   return true;
 }
 
+/// Date range picker limited to available dates, with validation feedback.
 Future<DateTimeRange?> showAvailableDateRangePicker({
   required BuildContext context,
   required List<DateTime> availableDates,
@@ -91,6 +102,7 @@ Future<DateTimeRange?> showAvailableDateRangePicker({
     firstDate: firstDate,
     lastDate: lastDate,
     helpText: helpText,
+    // Disable range picks that include unavailable dates.
     selectableDayPredicate: (day, start, end) => allowedDays.contains(_dayKey(day)),
   );
   if (selection == null) return null;
@@ -104,6 +116,7 @@ Future<DateTimeRange?> showAvailableDateRangePicker({
   return selection;
 }
 
+/// Custom range picker dialog that also shows pricing math.
 Future<DateTimeRange?> showPricedDateRangePicker({
   required BuildContext context,
   required List<DateTime> availableDates,
@@ -124,6 +137,7 @@ Future<DateTimeRange?> showPricedDateRangePicker({
   DateTime focusedDay = firstDate;
   String? errorText;
 
+  // Use a dialog so we can show a calendar + price summary.
   return showDialog<DateTimeRange>(
     context: context,
     builder: (dialogContext) {
@@ -222,6 +236,7 @@ Future<DateTimeRange?> showPricedDateRangePicker({
                       ),
                     ),
                     calendarBuilders: CalendarBuilders(
+                      // Mark disabled days with a faint "x".
                       disabledBuilder: (context, day, focusedDay) {
                         final isOutside = day.month != focusedDay.month;
                         final textColor = theme.colorScheme.onSurface
@@ -295,6 +310,7 @@ Future<DateTimeRange?> showPricedDateRangePicker({
                         );
                       },
                     ),
+                    // Only enable dates that are available.
                     enabledDayPredicate: (day) => allowedDays.contains(_dayKey(day)),
                     onRangeSelected: (start, end, focused) {
                       setState(() {
@@ -328,6 +344,7 @@ Future<DateTimeRange?> showPricedDateRangePicker({
                 child: const Text('Cancel'),
               ),
               FilledButton(
+                // Disable save if dates are invalid or incomplete.
                 onPressed: (startDate == null ||
                         (endDate != null &&
                             !isRangeAvailable(
@@ -350,6 +367,7 @@ Future<DateTimeRange?> showPricedDateRangePicker({
   );
 }
 
+/// Small label widget for the start/end date summary.
 class _DateLabel extends StatelessWidget {
   final String label;
   final DateTime? date;

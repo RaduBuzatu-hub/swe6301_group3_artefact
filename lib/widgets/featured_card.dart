@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 
-/// Small featured trip card; tests can find it via `featured.card` key.
+/// Small featured trip card used in the home carousel.
+/// - Shows a square image (or a gradient placeholder) with trip metadata.
+/// - Exposes a stable key so tests can locate the card.
 class FeaturedCard extends StatelessWidget {
   final String title;
   final String subtitle;

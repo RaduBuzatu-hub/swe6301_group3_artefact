@@ -7,7 +7,10 @@ import 'admin_dashboard_page.dart';
 import 'sign_in_page.dart';
 import 'sign_up_page.dart';
 
-/// Displays signed-in user info pulled from Firebase and local DB.
+/// Profile screen that reads auth state, shows user details, and edits local profile data.
+/// - Mirrors Firebase user info into a local profile row for offline access.
+/// - Streams admin status to reveal dashboard tools.
+/// - Includes wallet balance and quick-add credits UI.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -16,16 +19,20 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  // Cached future to avoid reloading profile data on every build.
   Future<LocalProfile?>? _profileFuture;
+  // Track current Firebase user and controller sync state.
   User? _currentUser;
   String? _controllersUid;
   bool _controllersInitialized = false;
 
+  // Editable fields for local profile updates.
   final _nameController = TextEditingController();
   final _bioController = TextEditingController();
   final _locationController = TextEditingController();
   final _phoneController = TextEditingController();
 
+  // Load profile from local DB, seeding a fallback if missing.
   Future<LocalProfile> _loadProfile(User user) async {
     final existing = await LocalDb.instance.getProfile(user.uid);
     if (existing != null) return existing;
@@ -44,11 +51,13 @@ class _ProfilePageState extends State<ProfilePage> {
     return fallback;
   }
 
+  // Refresh future/cache when the authenticated user changes.
   void _refreshProfile(User user) {
     _currentUser = user;
     _profileFuture = _loadProfile(user);
   }
 
+  // Keep controllers in sync with the loaded profile (once per UID).
   void _syncControllers(LocalProfile profile) {
     if (_controllersUid == profile.uid && _controllersInitialized) return;
     _controllersUid = profile.uid;
@@ -59,6 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _phoneController.text = profile.phone ?? '';
   }
 
+  // Persist edits locally and refresh the UI snapshot.
   Future<void> _saveProfile(LocalProfile profile) async {
     final updated = profile.copyWith(
       displayName: _nameController.text.trim().isEmpty
@@ -131,6 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    // Auth gate: show sign-in prompt or load profile details.
                     StreamBuilder<User?>(
                       stream: FirebaseAuth.instance.authStateChanges(),
                       builder: (context, snapshot) {
@@ -151,6 +162,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           _refreshProfile(user);
                         }
 
+                        // Local profile load + admin role check.
                         return FutureBuilder<LocalProfile?>(
                           future: _profileFuture,
                           builder: (context, profileSnapshot) {
@@ -208,6 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
+/// Card shown when the user is not authenticated.
 class _AuthCard extends StatelessWidget {
   const _AuthCard();
 
@@ -291,6 +304,7 @@ class _AuthCard extends StatelessWidget {
   }
 }
 
+/// Profile content shown when the user is signed in.
 class _SignedInContent extends StatelessWidget {
   final LocalProfile profile;
   final TextEditingController nameController;
@@ -314,6 +328,7 @@ class _SignedInContent extends StatelessWidget {
     required this.onSave,
   });
 
+  // Build initials for the avatar from the profile name.
   String _initials() {
     final name = profile.displayName ?? '';
     final parts = name.trim().split(' ');
@@ -331,6 +346,7 @@ class _SignedInContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header block with avatar, name, and sign-out action.
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -422,12 +438,15 @@ class _SignedInContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        // Wallet panel with live balance and credit add flow.
         _WalletCard(uid: profile.uid),
         if (isAdmin) ...[
           const SizedBox(height: 16),
+          // Admin users get quick access to the dashboard.
           _AdminToolsCard(onOpenAdmin: onOpenAdmin),
         ],
         const SizedBox(height: 16),
+        // Editable profile fields stored locally.
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -535,6 +554,7 @@ class _SignedInContent extends StatelessWidget {
   }
 }
 
+/// Wallet summary with a quick add-credits dialog.
 class _WalletCard extends StatefulWidget {
   final String uid;
   const _WalletCard({required this.uid});
@@ -546,10 +566,12 @@ class _WalletCard extends StatefulWidget {
 class _WalletCardState extends State<_WalletCard> {
   bool _isUpdating = false;
 
+  // Reference to the user's wallet document.
   DocumentReference<Map<String, dynamic>> get _walletRef {
     return FirebaseFirestore.instance.collection('wallets').doc(widget.uid);
   }
 
+  // Increment balance by a fixed amount.
   Future<void> _addCredits(int amount) async {
     await _walletRef.set(
       {
@@ -560,6 +582,7 @@ class _WalletCardState extends State<_WalletCard> {
     );
   }
 
+  // Show a dialog to pick a credit amount and apply it.
   Future<void> _promptAddCredits() async {
     final theme = Theme.of(context).colorScheme;
     const quickAmounts = [10, 25, 50, 100, 250, 500, 1000, 1500, 2000, 5000];
@@ -701,6 +724,7 @@ class _WalletCardState extends State<_WalletCard> {
         ],
       ),
       child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        // Listen to balance changes in real time.
         stream: walletRef.snapshots(),
         builder: (context, snapshot) {
           final data = snapshot.data?.data();
@@ -767,6 +791,7 @@ class _WalletCardState extends State<_WalletCard> {
   }
 }
 
+/// Admin-only quick access card.
 class _AdminToolsCard extends StatelessWidget {
   final VoidCallback onOpenAdmin;
   const _AdminToolsCard({required this.onOpenAdmin});
@@ -832,6 +857,7 @@ class _AdminToolsCard extends StatelessWidget {
   }
 }
 
+/// Consistent white input styling for editable profile fields.
 class _WhiteField extends StatelessWidget {
   final String label;
   final TextEditingController controller;

@@ -1,3 +1,7 @@
+/// Sign-in screen with email/password auth, reset flow, and local profile bootstrap.
+/// - Validates inputs before calling Firebase.
+/// - Supports password reset via email.
+/// - Seeds a local profile row on first device sign-in.
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -6,6 +10,7 @@ import '../data/local_db.dart';
 import '../utils/auth_helpers.dart';
 
 /// Email/password sign-in flow; on success seeds a local profile if missing.
+/// Accepts an optional [auth] instance for tests.
 class SignInPage extends StatefulWidget {
   final FirebaseAuth? auth;
   const SignInPage({super.key, this.auth});
@@ -15,12 +20,16 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
+  // Text controllers for the form fields; disposed in dispose().
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  // Toggles password visibility.
   bool _obscure = true;
+  // Track UI state for sign-in and password reset actions.
   AuthProcessState _signInState = const AuthProcessState.idle();
   AuthProcessState _resetState = const AuthProcessState.idle();
 
+  // Allow dependency injection for testing; default to FirebaseAuth.instance.
   FirebaseAuth get _auth => widget.auth ?? FirebaseAuth.instance;
 
   @override
@@ -35,6 +44,7 @@ class _SignInPageState extends State<SignInPage> {
     return Scaffold(
       body: Stack(
         children: [
+          // Gradient background behind the form.
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -62,6 +72,7 @@ class _SignInPageState extends State<SignInPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Top bar with back button and logo.
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -85,6 +96,7 @@ class _SignInPageState extends State<SignInPage> {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          // Page title.
                           Text(
                             'Sign in',
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -93,6 +105,7 @@ class _SignInPageState extends State<SignInPage> {
                                 ),
                           ),
                           const SizedBox(height: 24),
+                          // Email input field.
                           _buildField(
                             label: 'Email',
                             controller: _emailController,
@@ -100,6 +113,7 @@ class _SignInPageState extends State<SignInPage> {
                             icon: Icons.email_outlined,
                           ),
                           const SizedBox(height: 16),
+                          // Password input with visibility toggle.
                           _buildField(
                             label: 'Password',
                             controller: _passwordController,
@@ -116,6 +130,7 @@ class _SignInPageState extends State<SignInPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
+                              // Disable while a reset is in-flight.
                               onPressed: _resetState.isLoading ? null : _sendPasswordReset,
                               child: _resetState.isLoading
                                   ? const SizedBox(
@@ -136,6 +151,7 @@ class _SignInPageState extends State<SignInPage> {
                             ),
                           ),
                           const SizedBox(height: 24),
+                          // Sign-in action button.
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -161,6 +177,7 @@ class _SignInPageState extends State<SignInPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
+                          // Register link for users without an account.
                           Center(
                             child: Wrap(
                               alignment: WrapAlignment.center,
@@ -211,6 +228,7 @@ class _SignInPageState extends State<SignInPage> {
     IconData? icon,
     Widget? suffix,
   }) {
+    // Shared form field styling with label and optional icons.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -240,9 +258,11 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   Future<void> _signIn() async {
+    // Read current form values.
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // Validate inputs before attempting authentication.
     final validationMessage = AuthInputValidator.validateEmailAndPassword(
       email: email,
       password: password,
@@ -261,6 +281,7 @@ class _SignInPageState extends State<SignInPage> {
     }
 
     if (mounted) {
+      // Update state to show loading feedback.
       setState(() {
         _signInState = AuthProcessReducer.reduce(
           _signInState,
@@ -269,12 +290,14 @@ class _SignInPageState extends State<SignInPage> {
       });
     }
     try {
+      // Attempt sign-in and seed a local profile for first-time device use.
       final cred = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       await _ensureLocalProfile(cred.user);
       if (mounted) {
+        // On success, update state and exit the screen.
         setState(() {
           _signInState = AuthProcessReducer.reduce(
             _signInState,
@@ -286,6 +309,7 @@ class _SignInPageState extends State<SignInPage> {
     } on FirebaseAuthException catch (e) {
       final message = AuthErrorMapper.signInMessage(e.code);
       if (mounted) {
+        // Show a friendly error message and update UI state.
         setState(() {
           _signInState = AuthProcessReducer.reduce(
             _signInState,
@@ -297,6 +321,7 @@ class _SignInPageState extends State<SignInPage> {
     } catch (_) {
       const message = 'Something went wrong. Please try again.';
       if (mounted) {
+        // Handle unexpected errors.
         setState(() {
           _signInState = AuthProcessReducer.reduce(
             _signInState,
@@ -309,7 +334,9 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   Future<void> _sendPasswordReset() async {
+    // Read the email field for reset requests.
     final email = _emailController.text.trim();
+    // Validate email before requesting a reset and update UI state for feedback.
     final validationMessage = AuthInputValidator.validateResetEmail(email);
     if (validationMessage != null) {
       if (mounted) {
@@ -325,6 +352,7 @@ class _SignInPageState extends State<SignInPage> {
     }
 
     if (mounted) {
+      // Set loading state while sending the reset email.
       setState(() {
         _resetState = AuthProcessReducer.reduce(
           _resetState,
@@ -335,6 +363,7 @@ class _SignInPageState extends State<SignInPage> {
     try {
       await _auth.sendPasswordResetEmail(email: email);
       if (mounted) {
+        // Update state after a successful reset request.
         setState(() {
           _resetState = AuthProcessReducer.reduce(
             _resetState,
@@ -346,6 +375,7 @@ class _SignInPageState extends State<SignInPage> {
     } on FirebaseAuthException catch (e) {
       final message = AuthErrorMapper.resetMessage(e.code);
       if (mounted) {
+        // Report Firebase-specific errors to the user.
         setState(() {
           _resetState = AuthProcessReducer.reduce(
             _resetState,
@@ -357,6 +387,7 @@ class _SignInPageState extends State<SignInPage> {
     } catch (_) {
       const message = 'Unable to send reset email right now.';
       if (mounted) {
+        // Handle unexpected errors during reset.
         setState(() {
           _resetState = AuthProcessReducer.reduce(
             _resetState,
@@ -369,6 +400,7 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   void _showMessage(String message) {
+    // Surface feedback to the user via a snack bar.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );

@@ -15,7 +15,9 @@ import '../data/local_db.dart';
 import '../data/eco_locations.dart';
 
 /// Main landing screen showing featured escapes, filters, and activities.
-/// Host can hook into [onSearchSubmit], [onJoinTrip], and [onOpenProfile] for navigation.
+/// - Hosts the hero search bar and curated activity cards.
+/// - Exposes callbacks for navigation to search, detail, and profile flows.
+/// - Uses local and remote data for personalization (e.g., profile name).
 class HomePage extends StatefulWidget {
   final ValueChanged<String>? onSearchSubmit;
   final ValueChanged<TripEntry>? onJoinTrip;
@@ -69,12 +71,16 @@ class _ActivityCardData {
 
 /// Splits the HomePage UI into small builders to ease testing and readability.
 class _HomePageState extends State<HomePage> {
+  // Controller for the featured carousel.
   final PageController _featuredController = PageController(viewportFraction: 0.9);
+  // Current filter applied to activity cards.
   String _activityFilter = 'All';
+  // Selected category pill (for quick searches).
   String? _selectedCategory;
   // Filters used to drive ChoiceChips; also double as locator labels.
   static const List<String> _filters = ['All', 'Outdoor', 'Workshop', 'Online'];
 
+  // Static featured cards shown in the carousel.
   final List<_FeaturedEscape> _featuredEscapes = const [
     _FeaturedEscape(
       title: 'Seaside Escape',
@@ -99,6 +105,7 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
+  // Static activity cards shown in the grid.
   final List<_ActivityCardData> _activities = const [
     _ActivityCardData(
       title: 'Forest Replanting',
@@ -133,6 +140,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   EcoLocation? _findFeaturedLocation(_FeaturedEscape escape) {
+    // Match featured cards to real locations when possible.
     for (final location in kEcoLocations) {
       if (location.title.toLowerCase() == escape.title.toLowerCase()) {
         return location;
@@ -142,6 +150,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildFeaturedImage(_FeaturedEscape escape) {
+    // Prefer network imagery from location data with asset fallback.
     final location = _findFeaturedLocation(escape);
     if (location == null) {
       return Image.asset(
@@ -164,6 +173,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        // Branded logo and auth/profile actions.
         titleSpacing: 0,
         title: Transform.translate(
           offset: const Offset(-8, 8),
@@ -201,6 +211,7 @@ class _HomePageState extends State<HomePage> {
                 }
                 final user = snapshot.data;
                 if (user == null) {
+                  // Show sign-in/register CTAs when logged out.
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -244,6 +255,7 @@ class _HomePageState extends State<HomePage> {
                         ? name
                         : (user.email ?? 'Logged in');
                     final initial = (display.isNotEmpty ? display[0] : 'U').toUpperCase();
+                    // Render a compact profile pill with initials and name.
                     return InkWell(
                       borderRadius: BorderRadius.circular(18),
                       onTap: widget.onOpenProfile,
@@ -305,6 +317,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
+          // Background imagery with a gradient overlay.
           Positioned.fill(
             child: Image.asset(
               'lib/screens/assets/home_page_background.jpeg',
@@ -337,6 +350,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 12),
+                          // Search bar and curated content sections.
                           _buildSearchBar(context),
                           const SizedBox(height: 18),
                           _buildCategoriesSection(),
@@ -361,6 +375,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Search entry point that navigates to SearchPage and returns a query.
   Widget _buildSearchBar(BuildContext context) {
     return HomeSearchBar(
       onTap: () async {
@@ -377,6 +392,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Horizontal carousel for featured eco stays.
   Widget _buildFeaturedCarousel() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,6 +435,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Category pills that trigger quick searches.
   Widget _buildCategoriesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,6 +467,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Activity filters rendered as ChoiceChips.
   Widget _buildActivitiesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,6 +506,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Prominent event call-to-action card.
   Widget _buildEventHighlight(BuildContext context) {
     return Container(
       key: const Key('home.eventHighlight'),
@@ -617,6 +636,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Responsive activity grid with filtering by tag.
   Widget _buildActivitiesGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -729,6 +749,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+/// Small pill used for activity metadata tags.
 class _ActivityTag extends StatelessWidget {
   final String label;
   const _ActivityTag(this.label);

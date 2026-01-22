@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../data/eco_locations.dart';
 import '../utils/available_dates.dart';
 
+/// Booking summary passed back to callers after a stay is booked.
 class BookingDetails {
   final DateTimeRange range;
   final int nightlyRate;
@@ -19,6 +20,9 @@ class BookingDetails {
 }
 
 /// Location detail page used for both saved and booked contexts.
+/// - Supports saving/un-saving the stay to local trips.
+/// - Handles booking flow with wallet balance checks.
+/// - Returns booking details via callbacks.
 class LocationDetailPage extends StatefulWidget {
   final EcoLocation location;
   final bool isSaved;
@@ -45,14 +49,18 @@ class LocationDetailPage extends StatefulWidget {
 }
 
 class _LocationDetailPageState extends State<LocationDetailPage> {
+  // Local UI state mirrors saved/booking status.
   late bool _saved;
   late bool _booked;
+  // Precomputed available dates used by the date picker.
   late List<DateTime> _availableDates;
+  // Flat nightly rate used for pricing calculations.
   static const int _nightlyRate = 150;
 
   @override
   void initState() {
     super.initState();
+    // Seed initial state and available dates.
     _saved = widget.isSaved && !widget.isBooked;
     _booked = widget.isBooked;
     _availableDates = buildAvailableDates(
@@ -62,6 +70,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     );
   }
 
+  // Toggle saved state unless the stay is already booked.
   void _handleToggleSave() {
     if (_booked) return;
     widget.onToggleSave();
@@ -70,6 +79,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     });
   }
 
+  // Fetch wallet balance from Firestore (returns 0 on failure).
   Future<int> _fetchWalletBalance() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return 0;
@@ -83,6 +93,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     }
   }
 
+  // Attempt to debit the wallet by [amount]; returns success/failure.
   Future<bool> _chargeWallet(int amount) async {
     if (amount <= 0) return true;
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -111,6 +122,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     }
   }
 
+  // Confirm pricing with the user and optionally route to wallet top-up.
   Future<bool> _confirmCost({
     required int nights,
     required int total,
@@ -167,6 +179,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     return result ?? false;
   }
 
+  // Main booking flow: pick dates, confirm cost, charge wallet, persist booking.
   Future<void> _handleBook() async {
     if (_booked) {
       widget.onUnbook();
@@ -273,6 +286,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
             icon: Icon(_saved ? Icons.favorite : Icons.favorite_border),
             color: Colors.white,
             disabledColor: Colors.white70,
+            // Disable saving if already booked.
             onPressed: _booked ? null : _handleToggleSave,
           ),
         ],
@@ -281,6 +295,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Hero image for the location.
             AspectRatio(
               aspectRatio: 3 / 2,
               child: Image.network(
@@ -297,6 +312,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title and headline metadata.
                   Text(
                     l.title,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -313,6 +329,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                         ),
                   ),
                   const SizedBox(height: 10),
+                  // Meta/tag pills for location details.
                   Wrap(
                     spacing: 8,
                     runSpacing: 6,
@@ -323,6 +340,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 20),
+                  // Description section.
                   const Text(
                     'About this stay',
                     style: TextStyle(
@@ -340,6 +358,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                         ),
                   ),
                   const SizedBox(height: 24),
+                  // Booking and save CTAs.
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -378,6 +397,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
                       ),
                       if (_booked && widget.onViewTrips != null) ...[
                         const SizedBox(height: 10),
+                        // Shortcut back to Trips tab after booking.
                         OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF4A148C),
@@ -406,6 +426,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
   }
 }
 
+/// Small pill used for location meta and tags.
 class _TagChip extends StatelessWidget {
   final String label;
   const _TagChip({required this.label});
@@ -429,6 +450,7 @@ class _TagChip extends StatelessWidget {
   }
 }
 
+/// Format a DateTimeRange for display in booking confirmation.
 String _formatRange(DateTimeRange range) {
   String formatDate(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
@@ -440,6 +462,7 @@ String _formatRange(DateTimeRange range) {
   return '${formatDate(range.start)} to ${formatDate(range.end)}';
 }
 
+/// Two-column row used in the confirmation invoice.
 class _InvoiceRow extends StatelessWidget {
   final String label;
   final String value;

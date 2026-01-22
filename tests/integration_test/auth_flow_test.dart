@@ -1,3 +1,6 @@
+/// Integration tests for sign-in/sign-up flows using mock auth responses.
+/// - Covers success paths and common FirebaseAuth errors.
+/// - Uses a lightweight in-test app shell for navigation.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +32,7 @@ void main() {
 
   testWidgets('sign-in invalid credentials show error message', (tester) async {
     final auth = MockFirebaseAuth(signedIn: false);
+    // Simulate Firebase throwing a known auth error for invalid credentials.
     whenCalling(
       Invocation.method(
         #signInWithEmailAndPassword,
@@ -50,6 +54,7 @@ void main() {
 
   testWidgets('sign-in network failure shows retry message', (tester) async {
     final auth = MockFirebaseAuth(signedIn: false);
+    // Simulate connectivity failures during sign-in.
     whenCalling(
       Invocation.method(
         #signInWithEmailAndPassword,
@@ -89,6 +94,7 @@ void main() {
 
   testWidgets('sign-up duplicate email shows error message', (tester) async {
     final auth = MockFirebaseAuth(signedIn: false);
+    // Simulate Firebase throwing a duplicate-email error on sign-up.
     whenCalling(
       Invocation.method(
         #createUserWithEmailAndPassword,
@@ -113,18 +119,21 @@ void main() {
   });
 }
 
+// Helper to open the sign-in page via the test home UI.
 Future<void> _openSignIn(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('auth.openSignIn')));
   await tester.pumpAndSettle();
   expect(find.widgetWithText(ElevatedButton, 'Sign in'), findsOneWidget);
 }
 
+// Helper to open the sign-up page via the test home UI.
 Future<void> _openSignUp(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('auth.openSignUp')));
   await tester.pumpAndSettle();
   expect(find.text('Create account'), findsOneWidget);
 }
 
+/// Minimal app wrapper used by auth integration tests.
 class _AuthTestApp extends StatelessWidget {
   final FirebaseAuth auth;
   const _AuthTestApp({required this.auth});
@@ -137,6 +146,7 @@ class _AuthTestApp extends StatelessWidget {
   }
 }
 
+/// Home screen for tests with buttons to open auth pages.
 class _AuthHome extends StatelessWidget {
   final FirebaseAuth auth;
   const _AuthHome({required this.auth});

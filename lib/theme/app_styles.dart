@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Centralized style tokens shared across the app for consistent look and feel.
 /// Shared UI constants to keep screens aligned and easier to test across widgets/screens.
 class AppSpacing {
   static const page = EdgeInsets.all(24);

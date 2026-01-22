@@ -1,3 +1,5 @@
+/// Integration test verifying saved trips persist across app restarts.
+/// - Exercises LocalDb save/remove flows across widget rebuilds.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -86,6 +88,7 @@ void main() {
   });
 }
 
+// Clear any saved activities before running the test.
 Future<void> _clearSaved(String uid) async {
   final saved = await LocalDb.instance.getTrips(uid: uid, saved: true);
   for (final row in saved) {
@@ -100,6 +103,7 @@ Future<void> _clearSaved(String uid) async {
   }
 }
 
+// Scroll to and open a location detail card by title.
 Future<void> _openLocationDetail(WidgetTester tester, String title) async {
   final titleFinder = find.text(title);
   expect(titleFinder, findsWidgets);
@@ -109,6 +113,7 @@ Future<void> _openLocationDetail(WidgetTester tester, String title) async {
   await tester.pumpAndSettle();
 }
 
+/// Minimal app wrapper for the favorites persistence test.
 class _FavoritesTestApp extends StatelessWidget {
   final String uid;
   const _FavoritesTestApp({required this.uid});
@@ -121,6 +126,7 @@ class _FavoritesTestApp extends StatelessWidget {
   }
 }
 
+/// Home screen that wires ExplorePage to LocalDb save state.
 class _FavoritesHome extends StatefulWidget {
   final String uid;
   const _FavoritesHome({required this.uid});
@@ -139,6 +145,7 @@ class _FavoritesHomeState extends State<_FavoritesHome> {
     _loadSaved();
   }
 
+  // Load saved trips from local storage into state.
   Future<void> _loadSaved() async {
     final rows = await LocalDb.instance.getTrips(uid: widget.uid, saved: true);
     if (!mounted) return;
@@ -150,10 +157,12 @@ class _FavoritesHomeState extends State<_FavoritesHome> {
     });
   }
 
+  // Bridge ExplorePage save callbacks to local DB updates.
   void _handleToggleSave(EcoLocation location) {
     _toggleSave(location);
   }
 
+  // Add/remove a saved trip and persist changes.
   Future<void> _toggleSave(EcoLocation location) async {
     final key = _tripKey(location.title, location.location);
     final existingIndex = _saved.indexWhere((t) => _tripKey(t.title, t.location) == key);
@@ -208,6 +217,7 @@ class _FavoritesHomeState extends State<_FavoritesHome> {
   }
 }
 
+// Rebuild a TripEntry from LocalDb row data.
 TripEntry _mapToTrip(Map<String, dynamic> map) {
   return TripEntry(
     title: map['title'] as String? ?? '',
@@ -226,6 +236,7 @@ TripEntry _mapToTrip(Map<String, dynamic> map) {
   );
 }
 
+// Convert a TripEntry into a map for LocalDb.
 Map<String, dynamic> _tripToMap(TripEntry trip) {
   return {
     'title': trip.title,
@@ -240,5 +251,6 @@ Map<String, dynamic> _tripToMap(TripEntry trip) {
   };
 }
 
+// Stable key for deduping trips by title+location.
 String _tripKey(String title, String location) =>
     '${title.toLowerCase()}|${location.toLowerCase()}';

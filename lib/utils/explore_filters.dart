@@ -1,6 +1,9 @@
 import '../data/activities.dart';
 import '../data/eco_locations.dart';
 
+/// Filtering and sorting utilities for the Explore experience.
+
+/// High-level category filter for stays vs activities.
 enum ExploreCategoryFilter { all, stays, activities }
 
 extension ExploreCategoryFilterLabel on ExploreCategoryFilter {
@@ -16,6 +19,7 @@ extension ExploreCategoryFilterLabel on ExploreCategoryFilter {
   }
 }
 
+/// Sort options available on Explore lists.
 enum ExploreSortOption { ratingDesc, nameAsc }
 
 extension ExploreSortOptionLabel on ExploreSortOption {
@@ -29,6 +33,7 @@ extension ExploreSortOptionLabel on ExploreSortOption {
   }
 }
 
+/// Applies query, tag, location, and sort rules to explore datasets.
 class ExploreFilters {
   final String currentQuery;
   final Set<String> activeFilters;
@@ -86,6 +91,7 @@ class ExploreFilters {
     return _sortLocations(filtered);
   }
 
+  /// Filter activity items using the same rules as location filtering.
   List<ActivityItem> filterActivities(List<ActivityItem> activities) {
     if (categoryFilter == ExploreCategoryFilter.stays) return [];
     final q = currentQuery.toLowerCase().trim();
@@ -134,6 +140,7 @@ class ExploreFilters {
     return _sortActivities(filtered);
   }
 
+  // Match the selected location against the item location.
   bool _matchesLocation(String location) {
     if (selectedLocation == 'Anywhere') return true;
     final selected = selectedLocation.toLowerCase();
@@ -141,6 +148,7 @@ class ExploreFilters {
     return loc.contains(selected) || selected.contains(loc);
   }
 
+  // Match the selected eco tag against tags, meta, or title.
   bool _matchesEcoTag({
     required List<String> tags,
     required String meta,
@@ -153,16 +161,19 @@ class ExploreFilters {
         title.toLowerCase().contains(selected);
   }
 
+  // Extract a numeric value from a price string like "GBP 210".
   int? _extractPriceValue(String price) {
     final match = RegExp(r'(\\d+)').firstMatch(price.replaceAll(',', ''));
     return match != null ? int.tryParse(match.group(1) ?? '') : null;
   }
 
+  // Budget heuristic used by the "budget" filter.
   bool _isBudgetPrice(String price) {
     final value = _extractPriceValue(price);
     return value == null ? false : value <= 250;
   }
 
+  // Apply active filters that are specific to locations.
   bool _passesLocationFilters(EcoLocation item) {
     for (final f in activeFilters) {
       switch (f) {
@@ -195,6 +206,7 @@ class ExploreFilters {
     return true;
   }
 
+  // Apply active filters that are specific to activities.
   bool _passesActivityFilters(ActivityItem item) {
     for (final f in activeFilters) {
       switch (f) {
@@ -227,6 +239,7 @@ class ExploreFilters {
     return true;
   }
 
+  // Sort locations based on the selected sort option.
   List<EcoLocation> _sortLocations(List<EcoLocation> items) {
     final list = [...items];
     switch (sortOption) {
@@ -240,6 +253,7 @@ class ExploreFilters {
     return list;
   }
 
+  // Sort activities based on the selected sort option.
   List<ActivityItem> _sortActivities(List<ActivityItem> items) {
     final list = [...items];
     switch (sortOption) {
@@ -253,6 +267,7 @@ class ExploreFilters {
     return list;
   }
 
+  // Heuristic filters below are tuned to tag/meta strings in seed data.
   bool _isLowCo2Location(EcoLocation item) {
     final meta = item.meta.toLowerCase();
     final tags = item.tags.map((t) => t.toLowerCase()).toList();

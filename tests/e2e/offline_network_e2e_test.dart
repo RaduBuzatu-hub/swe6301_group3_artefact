@@ -1,3 +1,4 @@
+/// E2E smoke test for offline activity fetch and booking retry handling.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ void main() {
     await tester.pump(_networkDelay);
     await tester.pump();
 
+    // Initial state shows cached activities and offline banner.
     expect(find.byKey(const Key('activity.offlineMessage')), findsOneWidget);
     expect(find.text('Coastal Clean-Up Experience'), findsOneWidget);
     expect(find.text('Forest Replanting'), findsOneWidget);
@@ -25,6 +27,7 @@ void main() {
     await tester.pump(_networkDelay);
     await tester.pump();
 
+    // After retry, new data appears and banner disappears.
     expect(find.byKey(const Key('activity.offlineMessage')), findsNothing);
     expect(find.text('Pop-up Beach Cleanup'), findsOneWidget);
 
@@ -33,6 +36,7 @@ void main() {
     await tester.pump(_networkDelay);
     await tester.pump();
 
+    // Booking fails while offline.
     expect(find.byKey(const Key('booking.error')), findsOneWidget);
     expect(find.text('Booking failed. Check connection and try again.'), findsOneWidget);
 
@@ -41,11 +45,13 @@ void main() {
     await tester.pump(_networkDelay);
     await tester.pump();
 
+    // Booking succeeds after retry.
     expect(find.byKey(const Key('booking.error')), findsNothing);
     expect(find.byKey(const Key('booking.success')), findsOneWidget);
   });
 }
 
+/// Minimal app wrapper for offline network tests.
 class _OfflineNetworkApp extends StatelessWidget {
   const _OfflineNetworkApp();
 
@@ -57,6 +63,7 @@ class _OfflineNetworkApp extends StatelessWidget {
   }
 }
 
+/// Home screen that simulates activity fetch and booking flows.
 class _OfflineNetworkHome extends StatefulWidget {
   const _OfflineNetworkHome();
 
@@ -91,6 +98,7 @@ class _OfflineNetworkHomeState extends State<_OfflineNetworkHome> {
     _loadActivities();
   }
 
+  // Load activities, falling back to cached results on timeout.
   Future<void> _loadActivities() async {
     setState(() {
       _loadingActivities = true;
@@ -113,6 +121,7 @@ class _OfflineNetworkHomeState extends State<_OfflineNetworkHome> {
     }
   }
 
+  // Fake network fetch with a configurable offline toggle.
   Future<List<String>> _fetchActivities() async {
     await Future.delayed(_networkDelay);
     if (!_activityOnline) {
@@ -121,6 +130,7 @@ class _OfflineNetworkHomeState extends State<_OfflineNetworkHome> {
     return _freshActivities;
   }
 
+  // Retry activities by switching to online state.
   Future<void> _retryActivities() async {
     setState(() {
       _activityOnline = true;
@@ -128,6 +138,7 @@ class _OfflineNetworkHomeState extends State<_OfflineNetworkHome> {
     await _loadActivities();
   }
 
+  // Simulate a booking attempt with possible offline error.
   Future<void> _submitBooking() async {
     setState(() {
       _bookingInFlight = true;
@@ -150,6 +161,7 @@ class _OfflineNetworkHomeState extends State<_OfflineNetworkHome> {
     });
   }
 
+  // Retry the booking by toggling online state.
   Future<void> _retryBooking() async {
     setState(() {
       _bookingOnline = true;

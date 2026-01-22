@@ -1,3 +1,4 @@
+/// Unit tests for booking validation, slot math, and ledger updates.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swe6301_group3_artefact/models/trip_entry.dart';
@@ -5,6 +6,7 @@ import 'package:swe6301_group3_artefact/utils/available_dates.dart';
 import 'package:swe6301_group3_artefact/utils/booking_helpers.dart';
 
 void main() {
+  // Validate booking rules for required fields, ranges, totals, and times.
   group('BookingValidator', () {
     test('requires title and location', () {
       final message = BookingValidator.validateRequiredFields(
@@ -76,6 +78,7 @@ void main() {
     });
   });
 
+  // Slot reservation and release math.
   group('BookingSlots', () {
     test('decrements slots on reserve and rejects invalid requests', () {
       final reserved = BookingSlots.reserve(available: 5, requested: 2);
@@ -98,8 +101,10 @@ void main() {
     });
   });
 
+  // Ledger operations for booking, canceling, and deduping trips.
   group('BookingLedger', () {
     TripEntry trip(String title) {
+      // Build a minimal TripEntry for ledger tests.
       return TripEntry(
         title: title,
         subtitle: 'Meta',

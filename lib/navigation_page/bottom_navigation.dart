@@ -16,6 +16,9 @@ import '../screens/auth_required_page.dart';
 import '../data/local_db.dart';
 
 /// Root shell with four tabs (Home, Explore, Trips, Profile) and shared state.
+/// - Coordinates navigation between tabs and detail pages.
+/// - Keeps in-memory trip/save lists synchronized with local/remote data.
+/// - Reacts to auth changes to refresh stored trips and bookings.
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
 
@@ -24,13 +27,18 @@ class BottomNav extends StatefulWidget {
 }
 
 class _BottomNavState extends State<BottomNav> {
+  // Current tab index for BottomNavigationBar.
   int _index = 0;
+  // Query string passed into the Explore tab.
   String? _exploreQuery;
+  // In-memory lists backing Trips and saved activities.
   final List<TripEntry> _trips = [];
   final List<TripEntry> _savedActivities = [];
+  // Subscriptions for auth state and booking status updates.
   StreamSubscription<User?>? _authSub;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _bookingSub;
 
+  // Convenience getter for the current UID (null if signed out).
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   @override
@@ -47,9 +55,11 @@ class _BottomNavState extends State<BottomNav> {
     super.dispose();
   }
 
+  // Lowercased composite key used to dedupe trips/saves.
   String _tripKey(String title, String location) =>
       '${title.toLowerCase()}|${location.toLowerCase()}';
 
+  // Build a deterministic document ID for saved activities.
   String _savedDocId({
     required String uid,
     required String title,
@@ -59,6 +69,7 @@ class _BottomNavState extends State<BottomNav> {
     return Uri.encodeComponent('$uid|$key');
   }
 
+  // Route the search query to the Explore tab.
   void _handleSearchSubmit(String query) {
     setState(() {
       _exploreQuery = query;
@@ -66,6 +77,7 @@ class _BottomNavState extends State<BottomNav> {
     });
   }
 
+  // Add a joined trip and switch to Trips tab.
   void _handleJoinTrip(TripEntry trip) {
     final exists = _trips.any((t) => t.title == trip.title && t.location == trip.location);
     setState(() {
@@ -77,6 +89,7 @@ class _BottomNavState extends State<BottomNav> {
     });
   }
 
+  // Toggle save state for a location; requires sign-in.
   void _toggleSavedActivity(EcoLocation location) {
     final key = _tripKey(location.title, location.location);
     final isBooked = _trips.any((t) => _tripKey(t.title, t.location) == key);
@@ -112,6 +125,7 @@ class _BottomNavState extends State<BottomNav> {
 
   bool _isSignedIn() => FirebaseAuth.instance.currentUser != null;
 
+  // Load trips/saves from local DB whenever auth changes.
   Future<void> _loadUserData(User? user) async {
     if (user == null) {
       await _bookingSub?.cancel();
@@ -133,6 +147,7 @@ class _BottomNavState extends State<BottomNav> {
       final title = row['title'] as String? ?? '';
       final location = row['location'] as String? ?? '';
       final key = _tripKey(title, location);
+      // Drop saved items that are already booked.
       if (bookedKeys.contains(key)) {
         await LocalDb.instance.deleteSavedActivity(
           uid: user.uid,
@@ -159,6 +174,7 @@ class _BottomNavState extends State<BottomNav> {
     _startBookingWatcher(user);
   }
 
+  // Listen for remote booking cancellations to keep local trips consistent.
   void _startBookingWatcher(User user) {
     _bookingSub?.cancel();
     _bookingSub = FirebaseFirestore.instance
@@ -181,6 +197,7 @@ class _BottomNavState extends State<BottomNav> {
   }
 
   Map<String, dynamic> _tripToMap(TripEntry trip) {
+    // Normalize TripEntry for local DB storage.
     return {
       'title': trip.title,
       'subtitle': trip.subtitle,
@@ -202,6 +219,7 @@ class _BottomNavState extends State<BottomNav> {
   }
 
   TripEntry _mapToTrip(Map<String, dynamic> map) {
+    // Rebuild a TripEntry from stored map values.
     return TripEntry(
       title: map['title'] as String? ?? '',
       subtitle: map['subtitle'] as String? ?? '',
@@ -244,6 +262,7 @@ class _BottomNavState extends State<BottomNav> {
     required TripEntry trip,
     required BookingDetails details,
   }) async {
+    // Only record paid bookings with a positive total.
     if (details.total <= 0) return;
     try {
       await FirebaseFirestore.instance.collection('bookings').add(
@@ -354,6 +373,7 @@ class _BottomNavState extends State<BottomNav> {
 
   Future<void> _promptSignInForSaves() async {
     final theme = Theme.of(context).colorScheme;
+    // Show a modal prompting registration/sign-in before saving.
     await showDialog<void>(
       context: context,
       builder: (context) {
@@ -402,6 +422,7 @@ class _BottomNavState extends State<BottomNav> {
     );
   }
 
+  // Convert a location booking into a TripEntry and persist it.
   void _bookLocation(EcoLocation location, BookingDetails details) {
     final range = details.range;
     final key = _tripKey(location.title, location.location);
@@ -449,6 +470,7 @@ class _BottomNavState extends State<BottomNav> {
     }
   }
 
+  // Rebook an existing trip (used from Trips tab).
   void _rebookTrip(TripEntry trip, BookingDetails details) {
     final range = details.range;
     final key = _tripKey(trip.title, trip.location);
@@ -496,6 +518,7 @@ class _BottomNavState extends State<BottomNav> {
     }
   }
 
+  // Remove a trip by key and delete it from storage.
   void _removeTripByKey({required String title, required String location}) {
     final key = _tripKey(title, location);
     final existingIndex = _trips.indexWhere((t) => _tripKey(t.title, t.location) == key);
@@ -507,6 +530,7 @@ class _BottomNavState extends State<BottomNav> {
     _persistTripRemoval(title: removed.title, location: removed.location);
   }
 
+  // Remove a trip from saved list and persist the removal.
   void _unsaveTrip(TripEntry trip) {
     final key = _tripKey(trip.title, trip.location);
     final existingIndex =
@@ -527,6 +551,7 @@ class _BottomNavState extends State<BottomNav> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
 
+    // Tab pages are built once per build based on current state.
     final pages = [
       HomePage(
         onSearchSubmit: _handleSearchSubmit,

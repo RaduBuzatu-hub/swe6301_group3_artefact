@@ -1,3 +1,4 @@
+/// Widget test for the auth-required screen CTAs and key wiring.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,6 +9,7 @@ void main() {
     var signInTapped = false;
     var registerTapped = false;
 
+    // Fix viewport size so layout is deterministic for the test.
     await tester.binding.setSurfaceSize(const Size(1200, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -21,6 +23,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Ensure key elements are visible.
     expect(find.byKey(const Key('authRequired.title')), findsOneWidget);
     expect(find.byKey(const Key('authRequired.subtitle')), findsOneWidget);
     expect(find.byKey(const Key('authRequired.benefitCard')), findsOneWidget);

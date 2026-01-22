@@ -2,6 +2,9 @@
 import '../models/trip_entry.dart';
 
 /// Shows current trips and saved activities; navigated from BottomNav Trips tab.
+/// - Splits trips into upcoming/past tabs.
+/// - Offers per-item actions to unbook or unsave.
+/// - Uses [onOpenTrip] for navigation to detail screens.
 class TripsPage extends StatefulWidget {
   final List<TripEntry> trips;
   final List<TripEntry> savedActivities;
@@ -22,10 +25,12 @@ class TripsPage extends StatefulWidget {
 }
 
 class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMixin {
+  // 0 = upcoming, 1 = past.
   int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    // Split trips by date to populate tabs.
     final upcoming = widget.trips.where((t) => !t.isPast).toList();
     final past = widget.trips.where((t) => t.isPast).toList();
 
@@ -60,6 +65,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                     ),
               ),
               const SizedBox(height: 24),
+              // Tab selector for upcoming vs past.
               Row(
                 children: [
                   _TripsTabButton(
@@ -81,6 +87,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
               Expanded(
                 child: ListView(
                   children: [
+                    // Empty state for each tab.
                     if (cards.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 28),
@@ -109,6 +116,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                       ],
                     ],
                     const SizedBox(height: 28),
+                    // Saved activities list below booked trips.
                     _SavedSection(
                       saved: widget.savedActivities,
                       onTap: widget.onOpenTrip,
@@ -125,6 +133,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
   }
 }
 
+/// Saved activities section shown below booked trips.
 class _SavedSection extends StatelessWidget {
   final List<TripEntry> saved;
   final void Function(TripEntry trip)? onTap;
@@ -172,6 +181,7 @@ class _SavedSection extends StatelessWidget {
   }
 }
 
+/// Tab button with an animated underline for selection state.
 class _TripsTabButton extends StatelessWidget {
   final String label;
   final bool selected;
@@ -184,6 +194,7 @@ class _TripsTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Animated underline to indicate the active tab.
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -213,6 +224,7 @@ class _TripsTabButton extends StatelessWidget {
   }
 }
 
+/// Card used for both booked trips and saved activities.
 class _TripCard extends StatelessWidget {
   final TripEntry trip;
   final void Function(TripEntry trip)? onTap;
@@ -225,6 +237,7 @@ class _TripCard extends StatelessWidget {
     this.onAction,
   });
 
+  // Format a date as YYYY-MM-DD for compact display.
   String _formatDate(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
@@ -232,6 +245,7 @@ class _TripCard extends StatelessWidget {
     return '$y-$m-$d';
   }
 
+  // Build a date range label when booking info is available.
   String? _bookingDetails() {
     if (trip.date == null || trip.endDate == null) return null;
     final start = trip.date!;

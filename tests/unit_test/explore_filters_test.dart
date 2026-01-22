@@ -1,9 +1,11 @@
+/// Unit tests for ExploreFilters query, filter, and sort logic.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swe6301_group3_artefact/data/activities.dart';
 import 'package:swe6301_group3_artefact/data/eco_locations.dart';
 import 'package:swe6301_group3_artefact/utils/explore_filters.dart';
 
 void main() {
+  // Core filtering and sorting behavior for activities/stays.
   group('ExploreFilters activities', () {
     test('filters by category for activities and stays', () {
       final activityFilters = ExploreFilters(

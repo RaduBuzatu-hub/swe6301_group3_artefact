@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:swe6301_group3_artefact/theme/app_styles.dart';
 
 /// Landing panel shown when a feature requires authentication.
-/// Exposes `onSignIn` and `onRegister` so host screens can route to auth flows.
+/// - Exposes `onSignIn` and `onRegister` callbacks for navigation.
+/// - Highlights benefits to encourage account creation.
 class AuthRequiredPage extends StatelessWidget {
   final VoidCallback onSignIn;
   final VoidCallback onRegister;
@@ -78,6 +79,7 @@ class _AuthPageHeader extends StatelessWidget {
   }
 }
 
+/// Benefit list and CTA container.
 class _AuthBenefitCard extends StatelessWidget {
   final List<String> benefits;
   final VoidCallback onSignIn;
@@ -131,6 +133,7 @@ class _AuthBenefitCard extends StatelessWidget {
   }
 }
 
+/// Row containing the primary sign-in and register buttons.
 class _AuthActions extends StatelessWidget {
   final VoidCallback onSignIn;
   final VoidCallback onRegister;
@@ -173,6 +176,7 @@ class _AuthActions extends StatelessWidget {
   }
 }
 
+/// Single benefit row with icon + text.
 class _BenefitRow extends StatelessWidget {
   final String text;
   const _BenefitRow({super.key, required this.text});

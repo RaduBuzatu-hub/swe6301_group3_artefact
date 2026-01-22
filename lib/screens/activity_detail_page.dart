@@ -3,6 +3,8 @@ import '../models/trip_entry.dart';
 import '../utils/available_dates.dart';
 
 /// Detail page for an activity; returns a [TripEntry] back to the caller when user taps "Join".
+/// - Uses an injected or default date range picker.
+/// - Populates a TripEntry with the chosen dates.
 class ActivityDetailPage extends StatelessWidget {
   final TripEntry entry;
   final String tagPrimary;
@@ -16,6 +18,7 @@ class ActivityDetailPage extends StatelessWidget {
     this.dateRangePicker,
   });
 
+  // Pick a date range and return the updated TripEntry to the caller.
   Future<void> _handleJoin(BuildContext context) async {
     final availableDates = buildAvailableDates(
       seed: '${entry.title}|${entry.location}',
@@ -61,6 +64,7 @@ class ActivityDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Hero image with a fallback chain.
             AspectRatio(
               aspectRatio: 16 / 9,
               // Prefer remote image; fall back to bundled asset; final fallback shows a placeholder icon.
@@ -88,6 +92,7 @@ class ActivityDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title and subtitle.
                   Text(
                     entry.title,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -115,6 +120,7 @@ class ActivityDetailPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
+                  // Description text.
                   Text(
                     'About',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(

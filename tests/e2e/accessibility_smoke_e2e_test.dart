@@ -1,3 +1,4 @@
+/// Accessibility smoke E2E: text scaling, button contrast, and overflow checks.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ void main() {
     final overflowErrors = <FlutterErrorDetails>[];
     final originalOnError = FlutterError.onError;
     FlutterError.onError = (details) {
+      // Capture overflow errors to surface layout regressions under scaling.
       if (_isOverflowError(details)) {
         overflowErrors.add(details);
       }
@@ -46,6 +48,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Validate contrast for the sign-in CTA before auth.
     await _expectButtonContrast(
       tester,
       find.ancestor(
@@ -59,6 +62,7 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
     await tester.pumpAndSettle();
 
+    // Exercise stay detail flow and verify button contrast.
     expect(find.text('Explore'), findsWidgets);
 
     await tester.tap(find.byKey(const Key('e2e.openStay')));
@@ -82,6 +86,7 @@ void main() {
     expect(find.byType(ActivityDetailPage), findsOneWidget);
     expect(find.text('Join this activity'), findsOneWidget);
 
+    // Verify activity join button contrast too.
     await _expectButtonContrast(
       tester,
       find.ancestor(
@@ -98,22 +103,26 @@ void main() {
   });
 }
 
+// Identify layout overflow errors from Flutter's error text.
 bool _isOverflowError(FlutterErrorDetails details) {
   final message = details.exceptionAsString().toLowerCase();
   return message.contains('overflowed') || message.contains('renderflex');
 }
 
+// Render overflow errors in a readable form for test output.
 String _formatOverflowErrors(List<FlutterErrorDetails> errors) {
   if (errors.isEmpty) return '';
   return errors.map((e) => e.exceptionAsString()).join('\n\n');
 }
 
+// Compute contrast ratio and assert minimum WCAG-ish threshold.
 Future<void> _expectButtonContrast(
   WidgetTester tester,
   Finder finder, {
   double minRatio = 4.5,
 }) async {
   expect(finder, findsOneWidget);
+  // Compute contrast from resolved button colors against WCAG-like threshold.
   final element = tester.element(finder);
   final button = tester.widget<ButtonStyleButton>(finder);
   final style = button.style;
@@ -130,16 +139,19 @@ Future<void> _expectButtonContrast(
   );
 }
 
+// Finder helper for ButtonStyleButton widgets.
 Finder _buttonStyleButton() {
   return find.byWidgetPredicate((widget) => widget is ButtonStyleButton);
 }
 
+// Compute contrast ratio based on luminance.
 double _contrastRatio(Color a, Color b) {
   final l1 = a.computeLuminance() + 0.05;
   final l2 = b.computeLuminance() + 0.05;
   return l1 > l2 ? l1 / l2 : l2 / l1;
 }
 
+/// App wrapper that inflates text scale for a11y smoke tests.
 class _AccessibilityApp extends StatelessWidget {
   final FirebaseAuth auth;
   final double textScaleFactor;
@@ -154,6 +166,7 @@ class _AccessibilityApp extends StatelessWidget {
       builder: (context, child) {
         final media = MediaQuery.of(context);
         return MediaQuery(
+          // Inflate text size to stress layout and contrast handling.
           data: media.copyWith(textScaler: TextScaler.linear(textScaleFactor)),
           child: child ?? const SizedBox.shrink(),
         );
@@ -163,6 +176,7 @@ class _AccessibilityApp extends StatelessWidget {
   }
 }
 
+/// Simple auth gate used to route into Explore flow.
 class _AuthGate extends StatelessWidget {
   final FirebaseAuth auth;
   const _AuthGate({required this.auth});
@@ -186,6 +200,7 @@ class _AuthGate extends StatelessWidget {
   }
 }
 
+/// Explore screen wrapper with buttons to open detail pages.
 class _ExploreFlow extends StatelessWidget {
   static const _activityTitle = 'Coastal Clean-Up Experience';
   static const _activityLocation = 'Falmouth Beach, Cornwall';
@@ -272,6 +287,7 @@ class _ExploreFlow extends StatelessWidget {
   }
 }
 
+// Deterministic date range selection for the test.
 Future<DateTimeRange?> _selectFirstRange(
   BuildContext context,
   List<DateTime> availableDates,

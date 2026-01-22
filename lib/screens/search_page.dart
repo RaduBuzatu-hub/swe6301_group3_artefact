@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Simple search UI that returns the submitted query via Navigator.pop.
+/// Search page UI that collects a query and returns it via Navigator.pop.
+/// - Persists recent searches locally with SharedPreferences.
+/// - Surfaces popular and suggested terms for quick selection.
+/// - Normalizes input before saving/returning it.
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -10,13 +13,16 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
+  // Controller for the search input field.
   final TextEditingController _controller = TextEditingController();
+  // Curated example terms to help users start a search.
   final List<String> _popularSearches = const [
     'Low CO2 getaways',
     'No-flight trips',
     'Budget eco stays',
     'Forest hikes',
   ];
+  // Simple list of suggested destinations/keywords.
   final List<String> _suggestedLocations = const [
     'Cornwall',
     'Glamping',
@@ -25,8 +31,10 @@ class _SearchPageState extends State<SearchPage> {
     'Alps',
     'Bali',
   ];
+  // In-memory copy of recent searches loaded from preferences.
   List<String> _recentSearches = [];
 
+  // SharedPreferences key for storing recent searches.
   static const String _recentKey = 'recent_searches';
 
   @override
@@ -41,6 +49,7 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
+  // Load recent searches on first build.
   Future<void> _loadRecents() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -48,6 +57,7 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
+  // Save a term, de-duplicate, and cap the list length.
   Future<void> _saveRecent(String term) async {
     final normalized = term.trim();
     if (normalized.isEmpty) return;
@@ -62,6 +72,7 @@ class _SearchPageState extends State<SearchPage> {
     await prefs.setStringList(_recentKey, _recentSearches);
   }
 
+  // Normalize input, persist it, and return the value to the caller.
   void _handleSubmit([String? value]) {
     final text = value ?? _controller.text;
     final normalized = text.trim();
@@ -74,6 +85,7 @@ class _SearchPageState extends State<SearchPage> {
     Navigator.of(context).pop(normalized);
   }
 
+  // Section header styling.
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
@@ -87,6 +99,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  // Render a group of tappable chips for quick search shortcuts.
   Widget _buildChips(List<String> items) {
     return Wrap(
       spacing: 12,
@@ -110,6 +123,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  // Render a vertical list of suggested locations.
   Widget _buildSuggestionList() {
     return Column(
       children: _suggestedLocations
@@ -173,6 +187,7 @@ class _SearchPageState extends State<SearchPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Search input with clear button and submit handling.
                 TextField(
                   controller: _controller,
                   onSubmitted: _handleSubmit,
@@ -207,6 +222,7 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
                 ),
+                // Recent search history (persisted in SharedPreferences).
                 _buildSectionTitle('Recent searches'),
                 if (_recentSearches.isEmpty)
                   const Text(
@@ -215,8 +231,10 @@ class _SearchPageState extends State<SearchPage> {
                   )
                 else
                   _buildChips(_recentSearches),
+                // Curated popular terms for quick exploration.
                 _buildSectionTitle('Popular searches'),
                 _buildChips(_popularSearches),
+                // Suggested locations as a scrollable list.
                 _buildSectionTitle('Suggested'),
                 _buildSuggestionList(),
               ],

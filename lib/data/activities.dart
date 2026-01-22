@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Activity definitions used by Explore and detail screens.
+/// Immutable activity metadata used in lists and details.
 @immutable
 class ActivityItem {
   final String title;
@@ -23,6 +25,7 @@ class ActivityItem {
   });
 }
 
+/// Static seed data for demo activities.
 const List<ActivityItem> kActivities = [
   ActivityItem(
     title: 'Coastal Clean-Up Experience',

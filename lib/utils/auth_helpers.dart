@@ -1,3 +1,6 @@
+/// Helpers for auth form validation, error mapping, and UI state transitions.
+
+/// Validates auth form inputs and returns user-friendly messages.
 class AuthInputValidator {
   static final RegExp _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
@@ -30,6 +33,7 @@ class AuthInputValidator {
   }
 }
 
+/// Maps Firebase auth error codes to strings shown in the UI.
 class AuthErrorMapper {
   static String signInMessage(String code) {
     switch (code) {
@@ -82,8 +86,10 @@ class AuthErrorMapper {
   }
 }
 
+/// Status values for auth-related UI operations.
 enum AuthProcessStatus { idle, loading, success, error }
 
+/// Immutable container for a single auth operation state.
 class AuthProcessState {
   final AuthProcessStatus status;
   final String? message;
@@ -97,8 +103,10 @@ class AuthProcessState {
   bool get isLoading => status == AuthProcessStatus.loading;
 }
 
+/// Events used to drive auth state transitions.
 enum AuthProcessEventType { start, success, failure, reset }
 
+/// Event payload for updating auth process state.
 class AuthProcessEvent {
   final AuthProcessEventType type;
   final String? message;
@@ -112,6 +120,7 @@ class AuthProcessEvent {
   const AuthProcessEvent.reset() : this._(AuthProcessEventType.reset, null);
 }
 
+/// Pure reducer that applies an [AuthProcessEvent] to an [AuthProcessState].
 class AuthProcessReducer {
   static AuthProcessState reduce(AuthProcessState state, AuthProcessEvent event) {
     switch (event.type) {

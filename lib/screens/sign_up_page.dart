@@ -4,6 +4,9 @@ import '../data/local_db.dart';
 import '../utils/auth_helpers.dart';
 
 /// Registration flow; creates Firebase user then stores a local profile row.
+/// - Validates inputs before calling Firebase Auth.
+/// - Persists a local profile for offline-friendly display.
+/// - Shows loading/error state in the UI.
 class SignUpPage extends StatefulWidget {
   final FirebaseAuth? auth;
   const SignUpPage({super.key, this.auth});
@@ -13,12 +16,16 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  // Text controllers for the form fields.
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  // Toggles password visibility in the field.
   bool _obscure = true;
+  // Track the async register process for UI feedback.
   AuthProcessState _registerState = const AuthProcessState.idle();
 
+  // Allow injecting auth for tests; otherwise use FirebaseAuth.instance.
   FirebaseAuth get _auth => widget.auth ?? FirebaseAuth.instance;
 
   @override
@@ -34,6 +41,7 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       body: Stack(
         children: [
+          // Gradient background behind the form.
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -61,6 +69,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Header row with back button and logo.
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -84,6 +93,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          // Screen title.
                           Text(
                             'Create account',
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -92,12 +102,14 @@ class _SignUpPageState extends State<SignUpPage> {
                                 ),
                           ),
                           const SizedBox(height: 24),
+                          // Name input.
                           _buildField(
                             label: 'Name',
                             controller: _nameController,
                             icon: Icons.person_outline,
                           ),
                           const SizedBox(height: 16),
+                          // Email input.
                           _buildField(
                             label: 'Email',
                             controller: _emailController,
@@ -105,6 +117,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             icon: Icons.email_outlined,
                           ),
                           const SizedBox(height: 16),
+                          // Password input with visibility toggle.
                           _buildField(
                             label: 'Password',
                             controller: _passwordController,
@@ -119,6 +132,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           const SizedBox(height: 24),
+                          // Register action button.
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -144,6 +158,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           const SizedBox(height: 12),
+                          // Back link for returning without registration.
                           Center(
                             child: TextButton(
                               style: TextButton.styleFrom(
@@ -177,6 +192,7 @@ class _SignUpPageState extends State<SignUpPage> {
     IconData? icon,
     Widget? suffix,
   }) {
+    // Shared input styling for the sign-up form.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,10 +222,12 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> _register() async {
+    // Collect and normalize current input values.
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // Validate inputs before calling Firebase.
     final validationMessage = AuthInputValidator.validateEmailAndPassword(
       email: email,
       password: password,
@@ -228,6 +246,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     if (mounted) {
+      // Show loading state in the button.
       setState(() {
         _registerState = AuthProcessReducer.reduce(
           _registerState,
@@ -236,6 +255,7 @@ class _SignUpPageState extends State<SignUpPage> {
       });
     }
     try {
+      // Create Firebase user and update display name if provided.
       final cred = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -260,6 +280,7 @@ class _SignUpPageState extends State<SignUpPage> {
         await LocalDb.instance.upsertProfile(profile);
       }
       if (mounted && Navigator.of(context).canPop()) {
+        // Update state and return to previous screen.
         setState(() {
           _registerState = AuthProcessReducer.reduce(
             _registerState,
@@ -271,6 +292,7 @@ class _SignUpPageState extends State<SignUpPage> {
     } on FirebaseAuthException catch (e) {
       final message = AuthErrorMapper.signUpMessage(e.code);
       if (mounted) {
+        // Surface Firebase errors via state + snack bar.
         setState(() {
           _registerState = AuthProcessReducer.reduce(
             _registerState,
@@ -282,6 +304,7 @@ class _SignUpPageState extends State<SignUpPage> {
     } catch (_) {
       const message = 'Something went wrong. Please try again.';
       if (mounted) {
+        // Handle unexpected failures.
         setState(() {
           _registerState = AuthProcessReducer.reduce(
             _registerState,
@@ -294,6 +317,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   void _showMessage(String message) {
+    // Reusable feedback helper for snack bars.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
