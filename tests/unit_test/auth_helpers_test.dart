@@ -1,4 +1,6 @@
 /// Unit tests for auth input validation, error mapping, and reducer states.
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swe6301_group3_artefact/utils/auth_helpers.dart';
 

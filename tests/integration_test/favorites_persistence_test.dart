@@ -1,5 +1,7 @@
 /// Integration test verifying saved trips persist across app restarts.
 /// - Exercises LocalDb save/remove flows across widget rebuilds.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';

@@ -1,4 +1,6 @@
 /// Happy-path E2E flow: sign in, browse, book, and confirm an activity.
+library;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';

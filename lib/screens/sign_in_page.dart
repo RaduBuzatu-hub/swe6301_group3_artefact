@@ -2,6 +2,8 @@
 /// - Validates inputs before calling Firebase.
 /// - Supports password reset via email.
 /// - Seeds a local profile row on first device sign-in.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

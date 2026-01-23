@@ -1,4 +1,6 @@
 /// Unit tests for ExploreFilters query, filter, and sort logic.
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swe6301_group3_artefact/data/activities.dart';
 import 'package:swe6301_group3_artefact/data/eco_locations.dart';

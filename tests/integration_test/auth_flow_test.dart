@@ -1,6 +1,8 @@
 /// Integration tests for sign-in/sign-up flows using mock auth responses.
 /// - Covers success paths and common FirebaseAuth errors.
 /// - Uses a lightweight in-test app shell for navigation.
+library;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';

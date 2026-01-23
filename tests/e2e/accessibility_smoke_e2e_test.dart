@@ -1,4 +1,6 @@
 /// Accessibility smoke E2E: text scaling, button contrast, and overflow checks.
+library;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';

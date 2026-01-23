@@ -1,5 +1,7 @@
 /// Integration test covering activity list, detail, and booking selection.
 /// - Verifies date range picker handoff and TripEntry creation.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';

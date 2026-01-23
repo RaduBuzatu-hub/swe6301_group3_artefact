@@ -1,4 +1,5 @@
 /// Helpers for auth form validation, error mapping, and UI state transitions.
+library;
 
 /// Validates auth form inputs and returns user-friendly messages.
 class AuthInputValidator {

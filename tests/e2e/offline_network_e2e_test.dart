@@ -1,4 +1,6 @@
 /// E2E smoke test for offline activity fetch and booking retry handling.
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';

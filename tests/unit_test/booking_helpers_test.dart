@@ -1,4 +1,6 @@
 /// Unit tests for booking validation, slot math, and ledger updates.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swe6301_group3_artefact/models/trip_entry.dart';

@@ -1,4 +1,6 @@
 /// Widget test for the auth-required screen CTAs and key wiring.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
