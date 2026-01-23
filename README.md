@@ -4,6 +4,7 @@ Flutter web app for the SWE6301 Group 3 artefact.
 
 ## Examiner quick access
 - Hosted web app: `https://radubuzatu-hub.github.io/swe6301_group3_artefact/`
+- Direct APK download: `https://raw.githubusercontent.com/RaduBuzatu-hub/swe6301_group3_artefact/main/releases/app-release.apk`
 - Android APK install (if provided as `app-release.apk`):
   1. Copy `app-release.apk` to an Android phone.
   2. Open the file and allow "Install unknown apps" if prompted.
