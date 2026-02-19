@@ -256,9 +256,32 @@ class _TripCard extends StatelessWidget {
     return 'Stay: $range • $nightsLabel';
   }
 
+  int _daysUntil(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    return target.difference(today).inDays;
+  }
+
+  String _countdownLabel(DateTime date) {
+    final days = _daysUntil(date);
+    if (days < 0) return 'Past';
+    if (days == 0) return 'Today';
+    if (days == 1) return 'Tomorrow';
+    return 'In $days days';
+  }
+
+  Widget? _buildCountdownBadge() {
+    if (trip.date == null) return null;
+    final days = _daysUntil(trip.date!);
+    final label = _countdownLabel(trip.date!);
+    return _CountdownBadge(label: label, daysUntil: days);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookingDetails = _bookingDetails();
+    final countdownBadge = _buildCountdownBadge();
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: onTap != null ? () => onTap!(trip) : null,
@@ -300,12 +323,23 @@ class _TripCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    trip.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFFF7DFA5),
-                          fontWeight: FontWeight.w700,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          trip.title,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: const Color(0xFFF7DFA5),
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
+                      ),
+                      if (countdownBadge != null) ...[
+                        const SizedBox(width: 8),
+                        countdownBadge,
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -358,6 +392,49 @@ class _TripCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CountdownBadge extends StatelessWidget {
+  final String label;
+  final int daysUntil;
+  const _CountdownBadge({
+    required this.label,
+    required this.daysUntil,
+  });
+
+  Color _backgroundColor() {
+    if (daysUntil < 0) {
+      return Colors.white.withValues(alpha: 0.18);
+    }
+    if (daysUntil <= 1) {
+      return const Color(0xFFB7F5C2).withValues(alpha: 0.25);
+    }
+    return const Color(0xFFF7DFA5).withValues(alpha: 0.22);
+  }
+
+  Color _textColor() {
+    if (daysUntil < 0) return Colors.white70;
+    if (daysUntil <= 1) return const Color(0xFFB7F5C2);
+    return const Color(0xFFF7DFA5);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _backgroundColor(),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: _textColor(),
+              fontWeight: FontWeight.w700,
+            ),
       ),
     );
   }
