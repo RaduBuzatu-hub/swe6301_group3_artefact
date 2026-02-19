@@ -39,6 +39,10 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Prevent accidental check-in of Flutter web build output at repo root
+main.dart.js
+main.dart.js.map
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
